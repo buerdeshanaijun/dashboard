@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>安恒序 · 个人工作计划</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1117;color:#e8eaf0;min-height:100vh;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+.hd{background:linear-gradient(135deg,#1a1d28,#252a3a);border-bottom:1px solid #2a2e3f;padding:14px 16px;position:sticky;top:0;z-index:100}
+.hd h1{font-size:17px;font-weight:700;background:linear-gradient(135deg,#6c8cff,#a55eea);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hd .sub{font-size:11px;color:#9ca3b8;margin-top:2px}
+.hd-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.dbadge{display:inline-block;background:rgba(108,140,255,.15);color:#6c8cff;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.refresh-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(46,213,115,.13);color:#2ed573;border:1px solid rgba(46,213,115,.28);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.refresh-btn:active{background:rgba(46,213,115,.25)}
+.sync-export-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(255,159,67,.15);color:#ff9f43;border:1px solid rgba(255,159,67,.3);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.sync-export-btn:active{background:rgba(255,159,67,.25)}
+.sync-export-btn.has-changes{background:rgba(255,77,106,.18);color:#ff4d6a;border-color:rgba(255,77,106,.3);animation:pulse 2s infinite}
+.sync-clear-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(120,120,140,.12);color:#9ca3b8;border:1px solid rgba(120,120,140,.2);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.sync-clear-btn:active{background:rgba(120,120,140,.25)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,106,.4)}50%{box-shadow:0 0 0 6px rgba(255,77,106,0)}}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 16px}
+.sc{background:#1a1d28;border-radius:10px;padding:10px;border:1px solid #2a2e3f;text-align:center}
+.sc .n{font-size:22px;font-weight:800}
+.sc .l{font-size:9px;color:#9ca3b8;margin-top:2px;letter-spacing:1px}
+.tabs{display:flex;border-bottom:1px solid #2a2e3f;padding:0 16px}
+.tab{padding:12px 18px;font-size:14px;font-weight:600;color:#9ca3b8;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;-webkit-tap-highlight-color:rgba(108,140,255,.2)}
+.tab.on{color:#6c8cff;border-bottom-color:#6c8cff}
+.vw{display:none;padding:10px 16px 40px}
+.vw.on{display:block}
+.fbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fb{padding:5px 12px;border-radius:14px;font-size:11px;font-weight:600;background:#1a1d28;border:1px solid #2a2e3f;color:#9ca3b8;cursor:pointer;-webkit-tap-highlight-color:rgba(108,140,255,.2)}
+.fb.on{background:rgba(108,140,255,.2);border-color:#6c8cff;color:#6c8cff}
+.kb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kc{background:rgba(26,29,40,.7);border-radius:10px;padding:10px;min-height:120px}
+.kc h3{font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #2a2e3f}
+.kc.td h3{color:#ff9f43;border-color:#ff9f43}
+.kc.wt h3{color:#778ca3;border-color:#778ca3}
+.kc.dn h3{color:#2ed573;border-color:#2ed573}
+.tc{background:#1a1d28;border-radius:8px;padding:11px;margin-bottom:7px;border:1px solid #2a2e3f;cursor:pointer;position:relative;transition:background .15s}
+.tc:active{background:#252838}
+.tc.done{opacity:.55}
+.tc.done .tt{text-decoration:line-through;color:#778ca3}
+.tc.local-mod{border-color:rgba(255,159,67,.5);box-shadow:inset 0 0 0 1px rgba(255,159,67,.15)}
+.tc-toggle{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;border:2px solid #3a3f55;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:5;font-size:14px;color:transparent;padding:0;line-height:1}
+.tc-toggle:hover,.tc-toggle:active{transform:scale(1.12);border-color:#2ed573}
+.tc-toggle.checked{background:#2ed573;border-color:#2ed573;color:#0f1117;font-weight:700}
+.tc-toggle.checked:hover,.tc-toggle.checked:active{background:#ff4d6a;border-color:#ff4d6a;color:#fff}
+.tc.done .tc-toggle.checked{background:rgba(46,213,115,.5);border-color:rgba(46,213,115,.5)}
+.tt{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.35;padding-right:34px}
+.td2{font-size:10.5px;color:#9ca3b8;line-height:1.4;margin-bottom:6px}
+.mg{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.bg{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:600}
+.bu{background:rgba(255,77,106,.18);color:#ff4d6a}
+.bh{background:rgba(255,159,67,.18);color:#ff9f43}
+.bm{background:rgba(255,217,61,.18);color:#ffd93d}
+.bl{background:rgba(46,213,115,.18);color:#2ed573}
+.bc{background:rgba(108,140,255,.13);color:#6c8cff}
+.bp{background:rgba(236,100,166,.18);color:#ec64a6}
+.bd{background:rgba(255,255,255,.06);color:#9ca3b8}
+.blocal{background:rgba(255,159,67,.2);color:#ff9f43;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px}
+.pb{width:100%;height:4px;background:#2a2e3f;border-radius:2px;margin-top:6px;overflow:hidden}
+.pb .pf{height:100%;border-radius:2px;transition:width .3s}
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2.5px;background:#2a2e3f;border-radius:2px}
+.tg{margin-bottom:18px}
+.tldate{font-size:13px;font-weight:700;margin-bottom:8px;position:relative}
+.tldate::before{content:'';position:absolute;left:-19px;top:50%;width:10px;height:10px;border-radius:50%;background:#6c8cff;transform:translateY(-50%);border:3px solid #0f1117}
+.tldate.today::before{background:#ff4d6a;box-shadow:0 0 8px rgba(255,77,106,.5)}
+.tldate.today{color:#ff4d6a}
+.tldate.past::before{background:#2ed573}
+.tldate.past{color:#2ed573}
+.mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:16px}
+.mo.show{display:flex}
+.md{background:#1a1d28;border-radius:14px;padding:20px;max-width:440px;width:100%;border:1px solid #2a2e3f;max-height:85vh;overflow-y:auto}
+.md h2{font-size:17px;margin-bottom:12px;line-height:1.4}
+.fl{margin-bottom:14px}
+.fl label{display:block;font-size:10px;color:#9ca3b8;margin-bottom:4px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.fl .vl{font-size:14px;line-height:1.55}
+.empty{color:#5a6078;font-size:12px;text-align:center;padding:24px 12px}
+.ft{text-align:center;padding:16px;color:#5a6078;font-size:10.5px;border-top:1px solid #2a2e3f;margin-top:16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(70px);background:#1a1d28;color:#e8eaf0;padding:10px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:300;opacity:0;transition:all .3s;white-space:nowrap;border:1px solid #2a2e3f}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.sync-badge{font-size:10px;color:#778ca3;margin-top:4px}
+.sync-badge.ok{color:#2ed573}
+.sync-badge.err{color:#ff4d6a}
+.loading{text-align:center;padding:60px 20px;color:#9ca3b8;font-size:14px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid #2a2e3f;border-top-color:#6c8cff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.hd h1{font-size:15px}.md{padding:16px}.kc{min-height:80px}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div style="display:flex;justify-content:space-between;align-items:start">
+    <div>
+      <h1>安恒序 &middot; 个人工作计划</h1>
+      <div class="sub">中海油能源发展 &middot; 钻采工程研究院 &middot; 储层改造研究所</div>
+      <div class="sync-badge" id="syncStatus">加载中...</div>
+    </div>
+  </div>
+  <div class="hd-badges">
+    <span class="dbadge" id="todayBadge"></span>
+    <span class="refresh-btn" onclick="refreshData()">&#8635; 刷新</span>
+    <span class="sync-export-btn" id="syncBtn" onclick="exportChanges()" title="导出本地修改，粘贴给Claw同步">&#128206; 同步变更 <span id="syncCount"></span></span>
+    <span class="sync-clear-btn" id="clearBtn" onclick="clearLocalChanges()" style="display:none">&#10005; 清除本地</span>
+  </div>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div class="tabs" id="tabsBar">
+  <div class="tab on" onclick="switchTab('kanban',this)">看板</div>
+  <div class="tab" onclick="switchTab('timeline',this)">时间线</div>
+  <div class="tab" onclick="switchTab('all',this)">全部任务</div>
+</div>
+
+<div id="loadingArea" style="padding:40px 16px;text-align:center">
+  <div class="spinner"></div>
+  <div style="color:#9ca3b8;font-size:13px">正在加载数据...</div>
+</div>
+
+<div class="vw" id="v-kanban" style="display:none">
+  <div class="fbar" id="fk"></div>
+  <div class="kb">
+    <div class="kc td"><h3>待办</h3><div id="kb-todo"></div></div>
+    <div class="kc wt"><h3>等待中</h3><div id="kb-wait"></div></div>
+    <div class="kc dn"><h3>已完成</h3><div id="kb-done"></div></div>
+  </div>
+</div>
+
+<div class="vw" id="v-timeline" style="display:none">
+  <div class="fbar" id="ft"></div>
+  <div class="tl" id="tlbox"></div>
+</div>
+
+<div class="vw" id="v-all" style="display:none">
+  <div class="fbar" id="fa"></div>
+  <div id="allbox"></div>
+</div>
+
+<div class="mo" id="detailMo" onclick="if(event.target===this)closeMo()"><div class="md" id="detailMd" onclick="event.stopPropagation()"></div></div>
+<div class="toast" id="toast"></div>
+
+<div class="ft">
+  手动完成任务后点击「同步变更」按钮 → 粘贴给 Claw 即可同步到记忆<br>
+  <span id="updateTime"></span>
+</div>
+
+<script>
+// ===== GLOBALS =====
+var TASKS = [];
+var filterCat = "全部";
+var TODAY = "";
+var DATA_VERSION = "";
+
+// Set today's date
+(function(){
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth()+1).padStart(2,'0');
+  var d = String(now.getDate()).padStart(2,'0');
+  TODAY = y+"-"+m+"-"+d;
+  var days = ["周日","周一","周二","周三","周四","周五","周六"];
+  document.getElementById("todayBadge").textContent = TODAY + " " + days[now.getDay()];
+})();
+
+// ===== LOCAL STORAGE CHANGE TRACKING =====
+var LS_KEY = "dashboard_changes_v2";
+
+function loadLocalChanges() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+
+function saveLocalChanges(changes) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(changes)); } catch(e) {}
+}
+
+function getMergedTasks() {
+  var base = TASKS;
+  var changes = loadLocalChanges();
+  var merged = [];
+  for (var i = 0; i < base.length; i++) {
+    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg};
+    var cid = String(task.id);
+    if (changes[cid]) {
+      var ch = changes[cid];
+      if (ch.s) task.s = ch.s;
+      if (ch.pg !== undefined) task.pg = ch.pg;
+      task._local = true;
+    }
+    merged.push(task);
+  }
+  return merged;
+}
+
+function getUnsyncedCount() {
+  return Object.keys(loadLocalChanges()).length;
+}
+
+function updateSyncUI() {
+  var count = getUnsyncedCount();
+  var btn = document.getElementById("syncBtn");
+  var cntEl = document.getElementById("syncCount");
+  var clrBtn = document.getElementById("clearBtn");
+
+  if (count > 0) {
+    cntEl.textContent = "(" + count + ")";
+    btn.classList.add("has-changes");
+    clrBtn.style.display = "inline-flex";
+  } else {
+    cntEl.textContent = "";
+    btn.classList.remove("has-changes");
+    clrBtn.style.display = "none";
+  }
+}
+
+function toggleComplete(taskId) {
+  var changes = loadLocalChanges();
+  var cid = String(taskId);
+  var task = null;
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].id === taskId) { task = TASKS[i]; break; }
+  }
+  if (!task) return;
+
+  // Check current effective state (including any existing local changes)
+  var curTask = getMergedTasks().find(function(t){ return t.id === taskId; });
+  if (!curTask) return;
+
+  if (curTask.s === "已完成") {
+    // Revert to "待办"
+    changes[cid] = { s: "待办", pg: 0 };
+    showToast("已恢复为待办: " + task.t.substring(0,14)+"...");
+  } else {
+    // Mark as completed
+    changes[cid] = { s: "已完成", pg: 100 };
+    showToast("已完成: " + task.t.substring(0,14)+"...");
+  }
+
+  saveLocalChanges(changes);
+  updateSyncUI();
+  doRender();
+}
+
+function exportChanges() {
+  var changes = loadLocalChanges();
+  var count = Object.keys(changes).length;
+  if (count === 0) {
+    showToast("没有待同步的变更");
+    return;
+  }
+
+  // Build a human-readable summary + machine-readable JSON
+  var merged = getMergedTasks();
+  var summary = [];
+  var ids = Object.keys(changes);
+  for (var i = 0; i < ids.length; i++) {
+    var t = null;
+    for (var j = 0; j < merged.length; j++) {
+      if (String(merged[j].id) === ids[i]) { t = merged[j]; break; }
+    }
+    if (t) summary.push("- " + t.t + " → " + t.s);
+  }
+
+  var exportText = "请同步以下任务变更:\n" + summary.join("\n") + "\n\n---JSON---\n" + JSON.stringify(changes, null, 2);
+
+  // Try clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(exportText).then(function() {
+      showToast("已复制 " + count + " 条变更到剪贴板，粘贴给Claw即可同步!");
+    }).catch(function() {
+      promptCopy(exportText, count);
+    });
+  } else {
+    promptCopy(exportText, count);
+  }
+}
+
+function promptCopy(text, count) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast("已复制 " + count + " 条变更，粘贴给Claw即可同步!");
+  } catch(e) {
+    showToast("复制失败，请手动选择下方文本:");
+    alert(text);
+  }
+  document.body.removeChild(ta);
+}
+
+function clearLocalChanges() {
+  if (confirm("确定清除所有本地未同步的变更吗？这将恢复到服务器数据状态。")) {
+    saveLocalChanges({});
+    updateSyncUI();
+    doRender();
+    showToast("本地变更已清除");
+  }
+}
+
+// Priority helpers
+var pCls = {"紧急":"bu","高":"bh","中":"bm","低":"bl"};
+var pOrd = {"紧急":0,"高":1,"中":2,"低":3};
+
+// ===== FETCH DATA =====
+function fetchData(callback) {
+  var url = "data.json?t=" + Date.now();
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.timeout = 10000;
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      try {
+        TASKS = JSON.parse(xhr.responseText);
+        DATA_VERSION = new Date().toLocaleString("zh-CN");
+        document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
+        document.getElementById("syncStatus").className = "sync-badge ok";
+        document.getElementById("updateTime").textContent = "数据版本: " + DATA_VERSION;
+        if (callback) callback();
+      } catch(e) {
+        document.getElementById("syncStatus").textContent = "数据解析失败";
+        document.getElementById("syncStatus").className = "sync-badge err";
+      }
+    } else {
+      document.getElementById("syncStatus").textContent = "加载失败 (" + xhr.status + ")";
+      document.getElementById("syncStatus").className = "sync-badge err";
+    }
+    hideLoading();
+  };
+  xhr.onerror = function() {
+    document.getElementById("syncStatus").textContent = "网络错误，请刷新重试";
+    document.getElementById("syncStatus").className = "sync-badge err";
+    hideLoading();
+  };
+  xhr.ontimeout = function() {
+    document.getElementById("syncStatus").textContent = "请求超时，请刷新重试";
+    document.getElementById("syncStatus").className = "sync-badge err";
+    hideLoading();
+  };
+  xhr.send();
+}
+
+function hideLoading() {
+  var el = document.getElementById("loadingArea");
+  if (el) el.style.display = "none";
+  var kv = document.getElementById("v-kanban");
+  kv.className = "vw on";
+  kv.style.display = "";
+}
+
+function refreshData() {
+  document.getElementById("syncStatus").textContent = "正在刷新...";
+  document.getElementById("syncStatus").className = "sync-badge";
+  fetchData(function() {
+    doRender();
+    showToast("数据已刷新");
+  });
+}
+
+// Toast
+function showToast(msg) {
+  var el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(function(){ el.classList.remove("show"); }, 2500);
+}
+
+// Progress color
+function pgColor(p) {
+  if (p >= 100) return "#2ed573";
+  if (p > 0) return "#ff9f43";
+  return "#5a6078";
+}
+
+// Build a single task card HTML (with completion toggle)
+function makeCard(x) {
+  var done = x.s === "已完成";
+  var pc = pCls[x.p] || "bm";
+  var cc = x.c === "私人事务" ? "bp" : "bc";
+  var pg = pgColor(x.pg);
+  var extraPg = (x.pg > 0 && x.pg < 100) ? '<span class="bg" style="background:rgba(255,159,67,.18);color:#ff9f43">' + x.pg + '%</span>' : '';
+  var localBadge = x._local ? '<span class="blocal">本地修改</span>' : '';
+  var toggleCls = done ? ' checked' : '';
+
+  return '<div class="tc' + (done ? ' done' : '') + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')">' +
+    '<button class="tc-toggle' + toggleCls + '" onclick="event.stopPropagation();toggleComplete(' + x.id + ')" title="' + (done ? '点击恢复待办' : '点击标记完成') + '">' + (done ? '✓' : '') + '</button>' +
+    '<div class="tt">' + x.t + localBadge + '</div>' +
+    '<div class="td2">' + x.ds + '</div>' +
+    '<div class="mg">' +
+      '<span class="bg ' + pc + '">' + x.p + '</span>' +
+      '<span class="bg ' + cc + '">' + x.c + '</span>' +
+      '<span class="bg bd">' + x.d + '</span>' +
+      extraPg +
+    '</div>' +
+    '<div class="pb"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div>' +
+  '</div>';
+}
+
+// Get filtered tasks (from merged data)
+function getFiltered() {
+  var data = getMergedTasks();
+  if (filterCat === "全部") return data;
+  var result = [];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].c === filterCat) result.push(data[i]);
+  }
+  return result;
+}
+
+// Get all categories
+function getCategories() {
+  var cats = {};
+  for (var i = 0; i < TASKS.length; i++) {
+    cats[TASKS[i].c] = 1;
+  }
+  return ["全部"].concat(Object.keys(cats));
+}
+
+// Render stats bar
+function renderStats(data) {
+  var urgent = 0, todo = 0, wait = 0, done = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].p === "紧急" && data[i].s !== "已完成") urgent++;
+    if (data[i].s === "待办" || data[i].s === "进行中") todo++;
+    if (data[i].s === "等待") wait++;
+    if (data[i].s === "已完成") done++;
+  }
+  document.getElementById("stats").innerHTML =
+    '<div class="sc"><div class="n" style="color:#ff4d6a">' + urgent + '</div><div class="l">紧急</div></div>' +
+    '<div class="sc"><div class="n" style="color:#ff9f43">' + todo + '</div><div class="l">待办</div></div>' +
+    '<div class="sc"><div class="n" style="color:#778ca3">' + wait + '</div><div class="l">等待</div></div>' +
+    '<div class="sc"><div class="n" style="color:#2ed573">' + done + '</div><div class="l">完成</div></div>';
+}
+
+// Render kanban board
+function renderKanban(data) {
+  var tdList = [], wtList = [], dnList = [];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "待办" || data[i].s === "进行中") tdList.push(data[i]);
+    else if (data[i].s === "等待") wtList.push(data[i]);
+    else if (data[i].s === "已完成") dnList.push(data[i]);
+  }
+
+  function sortP(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);}
+  tdList.sort(sortP);
+  wtList.sort(sortP);
+  dnList.sort(sortP);
+
+  var htmlTd = "", htmlWt = "", htmlDn = "";
+  for (var j = 0; j < tdList.length; j++) htmlTd += makeCard(tdList[j]);
+  for (var j = 0; j < wtList.length; j++) htmlWt += makeCard(wtList[j]);
+  for (var j = 0; j < dnList.length; j++) htmlDn += makeCard(dnList[j]);
+
+  document.getElementById("kb-todo").innerHTML = htmlTd || '<div class="empty">暂无待办 &#127881;</div>';
+  document.getElementById("kb-wait").innerHTML = htmlWt || '<div class="empty">暂无等待</div>';
+  document.getElementById("kb-done").innerHTML = htmlDn || '<div class="empty">暂无完成</div>';
+}
+
+// Render timeline
+function renderTimeline(data) {
+  var groups = {};
+  for (var i = 0; i < data.length; i++) {
+    var d = data[i].d;
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(data[i]);
+  }
+
+  var dates = Object.keys(groups).sort();
+  var html = "";
+
+  for (var di = 0; di < dates.length; di++) {
+    var d = dates[di];
+    var cls = d === TODAY ? "today" : (d < TODAY ? "past" : "");
+    var label = d === TODAY ? d + " &#128205; 今天" : d;
+
+    html += '<div class="tg">';
+    html += '<div class="tldate ' + cls + '">' + label + '</div>';
+
+    var items = groups[d];
+    items.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+    for (var ji = 0; ji < items.length; ji++) {
+      html += makeCard(items[ji]);
+    }
+    html += '</div>';
+  }
+
+  document.getElementById("tlbox").innerHTML = html || '<div class="empty">暂无任务</div>';
+}
+
+// Render all tasks table
+function renderAll(data) {
+  var sClr = { "已完成": "#2ed573", "待办": "#ff9f43", "进行中": "#ff9f43", "等待": "#778ca3" };
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11.5px;min-width:520px">';
+  html += '<tr style="border-bottom:2px solid #2a2e3f">';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8;width:30px">✓</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">任务</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">类别</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">优先级</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">状态</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">截止</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">进度</th>';
+  html += '</tr>';
+
+  for (var i = 0; i < data.length; i++) {
+    var x = data[i];
+    var sc = sClr[x.s] || "#9ca3b8";
+    var pc = pCls[x.p] || "bm";
+    var pg = pgColor(x.pg);
+    var strike = x.s === "已完成" ? "text-decoration:line-through;opacity:.55" : "";
+    var checkIcon = x.s === "已完成" ? '<span style="color:#2ed573;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">✓</span>' : '<span style="color:#3a3f55;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">○</span>';
+    var localMark = x._local ? ' <span class="blocal">本地</span>' : '';
+
+    html += '<tr style="border-bottom:1px solid #2a2e3f;cursor:pointer' + (x._local ? ';background:rgba(255,159,67,.06)' : '') + '" onclick="openDetail(' + x.id + ')">';
+    html += '<td style="padding:7px 6px;text-align:center">' + checkIcon + '</td>';
+    html += '<td style="padding:7px 6px;font-weight:630;' + strike + '">' + x.t + localMark + '</td>';
+    var cc = x.c === "私人事务" ? "bp" : "bc";
+    html += '<td style="padding:7px 6px"><span class="bg ' + cc + '">' + x.c + '</span></td>';
+    html += '<td style="padding:7px 6px"><span class="bg ' + pc + '">' + x.p + '</span></td>';
+    html += '<td style="padding:7px 6px;color:' + sc + ';font-weight:630">' + x.s + '</td>';
+    html += '<td style="padding:7px 6px;color:#9ca3b8">' + x.d + '</td>';
+    html += '<td style="padding:7px 6px"><div class="pb" style="width:56px"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div></td>';
+    html += '</tr>';
+  }
+  html += '</table></div>';
+  document.getElementById("allbox").innerHTML = html;
+}
+
+// Render filter buttons
+function renderFilters() {
+  var cats = getCategories();
+  var ids = ["fk","ft","fa"];
+  for (var fi = 0; fi < ids.length; fi++) {
+    var html = "";
+    for (var ci = 0; ci < cats.length; ci++) {
+      var c = cats[ci];
+      var active = (filterCat === c) ? " on" : "";
+      html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')">' + c + '</span>';
+    }
+    document.getElementById(ids[fi]).innerHTML = html;
+  }
+}
+
+// Main render function
+function doRender() {
+  var data = getFiltered();
+  data.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+  renderStats(data);
+  renderKanban(data);
+  renderTimeline(data);
+  renderAll(data);
+  renderFilters();
+}
+
+// Tab switching
+function switchTab(name, tabEl) {
+  var tabs = document.querySelectorAll(".tab");
+  var views = document.querySelectorAll(".vw");
+  for (var i = 0; i < tabs.length; i++) tabs[i].className = "tab";
+  for (var i = 0; i < views.length; i++) {
+    views[i].className = "vw";
+    views[i].style.display = "";
+  }
+  tabEl.className = "tab on";
+  var vw = document.getElementById("v-" + name);
+  if (vw) vw.className = "vw on";
+}
+
+// Filter
+function setFilter(cat) {
+  filterCat = cat;
+  doRender();
+}
+
+// Open detail modal
+function openDetail(id) {
+  var merged = getMergedTasks();
+  var x = null;
+  for (var i = 0; i < merged.length; i++) {
+    if (merged[i].id === id) { x = merged[i]; break; }
+  }
+  if (!x) return;
+
+  var pc = pCls[x.p] || "bm";
+  var sc = x.s === "已完成" ? "#2ed573" : (x.s === "待办" ? "#ff9f43" : (x.s === "进行中" ? "#ff9f43" : "#778ca3"));
+  var cc = x.c === "私人事务" ? "bp" : "bc";
+
+  var md = document.getElementById("detailMd");
+  md.innerHTML =
+    '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
+    '<div class="fl"><label>详细说明</label><div class="vl">' + x.ds + '</div></div>' +
+    '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
+      '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
+      '<div><label>优先级</label><div class="vl"><span class="bg ' + pc + '">' + x.p + '</span></div></div>' +
+      '<div><label>状态</label><div class="vl" style="font-weight:700;color:' + sc + '">' + x.s + '</div></div>' +
+      '<div><label>截止日期</label><div class="vl">&#128197; ' + x.d + '</div></div>' +
+      '<div><label>进度</label><div class="vl">' + x.pg + '%</div></div>' +
+    '</div>' +
+    '<div class="ac" style="display:flex;gap:8px">' +
+      '<button class="btn" style="background:' + (x.s === '已完成' ? '#ff4d6a' : '#2ed573') + ';color:#fff;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none" onclick="toggleComplete(' + x.id + ');closeMo()">' + (x.s === '已完成' ? '恢复待办' : '标记完成') + '</button>' +
+      '<button class="btn" style="background:#3a3f55;color:#9ca3b8;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none" onclick="closeMo()">关闭</button>' +
+    '</div>';
+
+  document.getElementById("detailMo").classList.add("show");
+}
+
+function closeMo() {
+  document.getElementById("detailMo").classList.remove("show");
+}
+
+// ===== INIT =====
+fetchData(function() {
+  updateSyncUI();
+  doRender();
+});
+
+// Auto refresh every 5 minutes
+setInterval(function() {
+  fetchData(function() {
+    updateSyncUI();
+    doRender();
+  });
+}, 300000);
+</script>
+</body>
+</html>

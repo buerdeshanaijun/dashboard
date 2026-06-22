@@ -65,6 +65,62 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .blocal{background:rgba(255,159,67,.2);color:#ff9f43;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px}
 .pb{width:100%;height:4px;background:#2a2e3f;border-radius:2px;margin-top:6px;overflow:hidden}
 .pb .pf{height:100%;border-radius:2px;transition:width .3s}
+/* Gantt */
+.gantt-wrap{overflow-x:auto;overflow-y:auto;max-height:70vh;margin-top:8px}
+.gantt-wrap table{border-collapse:collapse;min-width:800px;width:max-content}
+.gantt-wrap th,.gantt-wrap td{padding:5px 4px;font-size:10.5px;border:1px solid #1f2333}
+.gantt-wrap th{background:#1a1d28;color:#9ca3b8;font-weight:600;position:sticky;top:0;z-index:5}
+.gantt-wrap .g-today{background:rgba(255,77,106,.15)!important;color:#ff4d6a}
+.gantt-wrap .g-today::after{content:'▼';font-size:8px;margin-left:2px}
+.gantt-bar{border-radius:3px;height:18px;min-width:3px;display:inline-block;position:relative}
+.gantt-bar.g-done{background:rgba(46,213,115,.6)}
+.gantt-bar.g-progress{background:rgba(255,159,67,.6)}
+.gantt-bar.g-wait{background:rgba(120,140,160,.35)}
+.gantt-bar.g-urgent{background:rgba(255,77,106,.6)}
+.gantt-task-name{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:#e8eaf0;font-weight:600}
+.gantt-task-name.done{text-decoration:line-through;color:#778ca3}
+/* Weekly Summary */
+.ws-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+.ws-card{background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f}
+.ws-card h3{font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #2a2e3f;display:flex;align-items:center;gap:6px}
+.ws-card .ws-icon{font-size:16px}
+.ws-card.done h3{color:#2ed573;border-color:#2ed573}
+.ws-card.todo h3{color:#ff9f43;border-color:#ff9f43}
+.ws-card.wait h3{color:#778ca3;border-color:#778ca3}
+.ws-card.urgent h3{color:#ff4d6a;border-color:#ff4d6a}
+.ws-item{font-size:11px;color:#c4c9d4;padding:5px 0;border-bottom:1px solid #232738;display:flex;align-items:center;gap:6px}
+.ws-item:last-child{border-bottom:none}
+.ws-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ws-num{font-size:28px;font-weight:800;float:right}
+.ws-stat-group{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
+.ws-stat{background:#0f1117;border-radius:8px;padding:10px;text-align:center}
+.ws-stat .num{font-size:20px;font-weight:800}
+.ws-stat .lab{font-size:9px;color:#9ca3b8;margin-top:2px}
+/* Calendar */
+.cal-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0}
+.cal-header button{background:#1a1d28;border:1px solid #2a2e3f;color:#9ca3b8;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
+.cal-header .cal-month{font-size:15px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.cal-dow{padding:6px 0;font-size:10px;font-weight:700;color:#9ca3b8}
+.cal-day{background:#1a1d28;border-radius:8px;padding:4px 2px;min-height:56px;cursor:pointer;border:1px solid #2a2e3f;font-size:11px;transition:background .15s;position:relative}
+.cal-day:hover{background:#252a3a}
+.cal-day.today{border-color:#ff4d6a;background:rgba(255,77,106,.08)}
+.cal-day.today .cal-dnum{color:#ff4d6a;font-weight:800}
+.cal-day.other{opacity:.35}
+.cal-dnum{font-size:11px;font-weight:600;margin-bottom:3px}
+.cal-dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center}
+.cal-dot{width:6px;height:6px;border-radius:50%}
+.cal-dot.done-bg{background:#2ed573}
+.cal-dot.todo-bg{background:#ff9f43}
+.cal-dot.wait-bg{background:#778ca3}
+.cal-day-pop{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1d28;border:1px solid #2a2e3f;border-radius:8px;padding:6px 8px;z-index:50;min-width:150px;max-width:220px;font-size:10px;text-align:left;box-shadow:0 4px 16px rgba(0,0,0,.5);white-space:nowrap;pointer-events:none}
+.cal-day:hover .cal-day-pop{display:block}
+.cal-day-pop .cp-item{padding:3px 0;border-bottom:1px solid #232738;display:flex;gap:4px;align-items:center}
+.cal-day-pop .cp-item:last-child{border-bottom:none}
+.cal-day-pop .cp-status{font-size:9px;padding:1px 4px;border-radius:3px;font-weight:600}
+.cal-day-pop .cp-status.done-c{color:#2ed573;background:rgba(46,213,115,.15)}
+.cal-day-pop .cp-status.todo-c{color:#ff9f43;background:rgba(255,159,67,.15)}
+.cal-day-pop .cp-status.wait-c{color:#778ca3;background:rgba(120,140,160,.15)}
 .tl{position:relative;padding-left:24px}
 .tl::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2.5px;background:#2a2e3f;border-radius:2px}
 .tg{margin-bottom:18px}
@@ -117,6 +173,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="tabs" id="tabsBar">
   <div class="tab on" onclick="switchTab('kanban',this)">看板</div>
   <div class="tab" onclick="switchTab('timeline',this)">时间线</div>
+  <div class="tab" onclick="switchTab('gantt',this)">甘特图</div>
+  <div class="tab" onclick="switchTab('weekly',this)">周总结</div>
+  <div class="tab" onclick="switchTab('calendar',this)">日历</div>
   <div class="tab" onclick="switchTab('all',this)">全部任务</div>
 </div>
 
@@ -142,6 +201,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="vw" id="v-all" style="display:none">
   <div class="fbar" id="fa"></div>
   <div id="allbox"></div>
+</div>
+
+<div class="vw" id="v-gantt" style="display:none">
+  <div class="fbar" id="fg"></div>
+  <div id="ganttBox" style="padding:0 4px"></div>
+</div>
+
+<div class="vw" id="v-weekly" style="display:none">
+  <div id="weeklyBox" style="padding:0 4px"></div>
+</div>
+
+<div class="vw" id="v-calendar" style="display:none">
+  <div id="calBox" style="padding:0 4px"></div>
 </div>
 
 <div class="mo" id="detailMo" onclick="if(event.target===this)closeMo()"><div class="md" id="detailMd" onclick="event.stopPropagation()"></div></div>
@@ -541,7 +613,7 @@ function renderAll(data) {
 // Render filter buttons
 function renderFilters() {
   var cats = getCategories();
-  var ids = ["fk","ft","fa"];
+  var ids = ["fk","ft","fg","fa"];
   for (var fi = 0; fi < ids.length; fi++) {
     var html = "";
     for (var ci = 0; ci < cats.length; ci++) {
@@ -553,6 +625,384 @@ function renderFilters() {
   }
 }
 
+// Render Gantt chart
+function renderGantt(data) {
+  // Filter tasks with dates
+  var withDates = [];
+  var noDates = [];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].d && data[i].d !== "") withDates.push(data[i]);
+    else noDates.push(data[i]);
+  }
+  // Sort by date
+  withDates.sort(function(a,b){ return (a.d||"") < (b.d||"") ? -1 : 1; });
+
+  if (withDates.length === 0) {
+    document.getElementById("ganttBox").innerHTML = '<div class="empty">暂无带日期的任务</div>';
+    return;
+  }
+
+  // Find date range
+  var minDate = withDates[0].d;
+  var maxDate = withDates[0].d;
+  for (var i = 0; i < withDates.length; i++) {
+    if (withDates[i].d < minDate) minDate = withDates[i].d;
+    if (withDates[i].d > maxDate) maxDate = withDates[i].d;
+  }
+
+  // Extend range: start from Monday of the week containing minDate, end to Sunday of week containing maxDate
+  var minD = new Date(minDate + "T00:00:00");
+  var maxD = new Date(maxDate + "T00:00:00");
+  minD.setDate(minD.getDate() - minD.getDay() + 1); // Monday
+  maxD.setDate(maxD.getDate() - maxD.getDay() + 7); // Next Sunday
+
+  // Generate week columns
+  var weeks = [];
+  var cur = new Date(minD);
+  var todayD = TODAY;
+  while (cur <= maxD) {
+    var weekStart = new Date(cur);
+    var weekEnd = new Date(cur);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    var ws = formatDate(weekStart);
+    var we = formatDate(weekEnd);
+    var isThisWeek = (todayD >= ws && todayD <= we);
+    weeks.push({ start: ws, end: we, label: ws.substring(5) + "~" + we.substring(5), today: isThisWeek });
+    cur.setDate(cur.getDate() + 7);
+  }
+
+  // Build table
+  var html = '<div class="gantt-wrap"><table>';
+  // Header
+  html += '<tr><th style="min-width:100px;position:sticky;left:0;z-index:6;background:#151720">任务</th><th style="min-width:50px;position:sticky;left:100px;z-index:6;background:#151720">进展</th>';
+  for (var wi = 0; wi < weeks.length; wi++) {
+    html += '<th class="' + (weeks[wi].today ? 'g-today' : '') + '" style="min-width:44px" title="' + weeks[wi].start + ' ~ ' + weeks[wi].end + '">' + weeks[wi].label + '</th>';
+  }
+  html += '</tr>';
+
+  // Rows
+  var barColors = {"已完成":"g-done","待办":"g-progress","进行中":"g-progress","等待":"g-wait"};
+
+  for (var ri = 0; ri < withDates.length; ri++) {
+    var t = withDates[ri];
+    var taskDate = t.d;
+    var statusCls = barColors[t.s] || "g-wait";
+    var doneMark = t.s === "已完成" ? " done" : "";
+
+    html += '<tr>';
+    html += '<td style="position:sticky;left:0;background:#151720;z-index:3" title="' + t.t + '"><div class="gantt-task-name' + doneMark + '">' + t.t + '</div></td>';
+    html += '<td style="position:sticky;left:100px;background:#151720;z-index:3;text-align:center;font-size:10px;color:#9ca3b8">' + t.pg + '%</td>';
+
+    for (var wi = 0; wi < weeks.length; wi++) {
+      var w = weeks[wi];
+      var inWeek = (taskDate >= w.start && taskDate <= w.end);
+      if (inWeek) {
+        // Calculate position within the week (day of week offset)
+        var td = new Date(taskDate + "T00:00:00");
+        var dayOfWeek = td.getDay();
+        var wsD = new Date(w.start + "T00:00:00");
+        var dayOffset = Math.floor((td - wsD) / 86400000);
+        var leftPct = (dayOffset / 7) * 100;
+        html += '<td style="text-align:left;position:relative" title="' + t.t + ' (' + taskDate + ')"><div class="gantt-bar ' + statusCls + '" style="width:60%;margin-left:' + leftPct + '%"></div></td>';
+      } else {
+        html += '<td></td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</table></div>';
+
+  // No-date tasks
+  if (noDates.length > 0) {
+    html += '<div style="margin-top:12px;padding:10px;background:#1a1d28;border-radius:8px;border:1px solid #2a2e3f">';
+    html += '<div style="font-size:11px;color:#9ca3b8;margin-bottom:6px;font-weight:600">未排期任务 (' + noDates.length + ')</div>';
+    for (var ni = 0; ni < noDates.length; ni++) {
+      var nt = noDates[ni];
+      var npc = pCls[nt.p] || "bm";
+      html += '<div style="font-size:10.5px;padding:2px 0;color:' + (nt.s === "已完成" ? "#778ca3" : "#c4c9d4") + '">' + (nt.s === "已完成" ? '<s>' + nt.t + '</s>' : nt.t) + ' <span class="bg ' + npc + '">' + nt.p + '</span></div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById("ganttBox").innerHTML = html;
+}
+
+// Helper: format date
+function formatDate(d) {
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return y+"-"+m+"-"+dd;
+}
+
+// Render Weekly Summary
+function renderWeekly(data) {
+  // Get current week range (Mon-Sun)
+  var now = new Date();
+  var dayOfWeek = now.getDay();
+  var monday = new Date(now);
+  monday.setDate(now.getDate() - dayOfWeek + 1);
+  var sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  var ws = formatDate(monday);
+  var we = formatDate(sunday);
+
+  // Categorize tasks
+  var thisWeek = [];
+  var overdue = [];
+  var completedThisWeek = []; // Tasks completed (can be from any date but we show recent)
+  for (var i = 0; i < data.length; i++) {
+    var t = data[i];
+    var td = t.d;
+    // Due this week
+    if (td && td >= ws && td <= we && t.s !== "已完成") {
+      thisWeek.push(t);
+    }
+    // Overdue (due before today but not completed)
+    if (td && td < TODAY && td !== "" && t.s !== "已完成") {
+      overdue.push(t);
+    }
+    // Completed tasks (show all recently completed)
+    if (t.s === "已完成") {
+      completedThisWeek.push(t);
+    }
+  }
+
+  // Sort
+  var sortP = function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);};
+  thisWeek.sort(sortP);
+  overdue.sort(sortP);
+  completedThisWeek.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
+
+  // Stats
+  var total = data.length;
+  var doneCount = 0, todoCount = 0, waitCount = 0, urgentCount = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "已完成") doneCount++;
+    else if (data[i].s === "等待") waitCount++;
+    else todoCount++;
+    if (data[i].p === "紧急" && data[i].s !== "已完成") urgentCount++;
+  }
+
+  var html = '';
+  // Week header
+  html += '<div style="background:linear-gradient(135deg,#1a1d28,#252a3a);border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:10px">';
+  html += '<div style="font-size:14px;font-weight:700;color:#6c8cff">第 ' + getWeekNumber(monday) + ' 周总结</div>';
+  html += '<div style="font-size:10px;color:#9ca3b8;margin-top:2px">' + ws + ' ~ ' + we + '</div>';
+  html += '</div>';
+
+  // Stats grid
+  html += '<div class="ws-stat-group">';
+  html += '<div class="ws-stat"><div class="num" style="color:#ff4d6a">' + urgentCount + '</div><div class="lab">紧急待办</div></div>';
+  html += '<div class="ws-stat"><div class="num" style="color:#ff9f43">' + todoCount + '</div><div class="lab">进行中</div></div>';
+  html += '<div class="ws-stat"><div class="num" style="color:#2ed573">' + doneCount + '</div><div class="lab">已完成</div></div>';
+  html += '<div class="ws-stat"><div class="num" style="color:#778ca3">' + waitCount + '</div><div class="lab">等待中</div></div>';
+  html += '</div>';
+
+  // Cards grid
+  html += '<div class="ws-grid">';
+
+  // Overdue
+  html += '<div class="ws-card urgent"><h3><span class="ws-icon">&#9888;</span> 逾期未完成 (' + overdue.length + ')</h3>';
+  if (overdue.length === 0) html += '<div class="empty">暂无逾期任务 &#127881;</div>';
+  for (var oi = 0; oi < overdue.length; oi++) {
+    var ot = overdue[oi];
+    html += '<div class="ws-item"><span class="ws-dot" style="background:#ff4d6a"></span><span style="flex:1">' + ot.t + '</span><span style="color:#ff4d6a;font-size:9px">' + ot.d + '</span></div>';
+  }
+  html += '</div>';
+
+  // This week
+  html += '<div class="ws-card todo"><h3><span class="ws-icon">&#128197;</span> 本周待办 (' + thisWeek.length + ')</h3>';
+  if (thisWeek.length === 0) html += '<div class="empty">本周暂无待办 &#127881;</div>';
+  for (var ti = 0; ti < thisWeek.length; ti++) {
+    var tt = thisWeek[ti];
+    var ppc = pCls[tt.p] || "bm";
+    html += '<div class="ws-item"><span class="ws-dot" style="background:#ff9f43"></span><span style="flex:1">' + tt.t + '</span><span class="bg ' + ppc + '">' + tt.p + '</span></div>';
+  }
+  html += '</div>';
+
+  // Recently completed
+  html += '<div class="ws-card done"><h3><span class="ws-icon">&#10003;</span> 最近完成 (' + Math.min(10, completedThisWeek.length) + '/' + completedThisWeek.length + ')</h3>';
+  if (completedThisWeek.length === 0) html += '<div class="empty">暂无完成记录</div>';
+  for (var ci = 0; ci < Math.min(completedThisWeek.length, 10); ci++) {
+    var ct = completedThisWeek[ci];
+    html += '<div class="ws-item"><span class="ws-dot" style="background:#2ed573"></span><span style="flex:1">' + ct.t + '</span><span style="color:#2ed573;font-size:9px">' + ct.d + '</span></div>';
+  }
+  html += '</div>';
+
+  // Categories breakdown
+  html += '<div class="ws-card wait"><h3><span class="ws-icon">&#128230;</span> 任务分类统计</h3>';
+  var catStats = {};
+  for (var i = 0; i < data.length; i++) {
+    var cat = data[i].c;
+    if (!catStats[cat]) catStats[cat] = { t:0, d:0 };
+    catStats[cat].t++;
+    if (data[i].s === "已完成") catStats[cat].d++;
+  }
+  var catKeys = Object.keys(catStats);
+  catKeys.sort(function(a,b){ return catStats[b].t - catStats[a].t; });
+  for (var ci = 0; ci < catKeys.length; ci++) {
+    var ck = catKeys[ci];
+    var cs = catStats[ck];
+    var pct = cs.t > 0 ? Math.round(cs.d / cs.t * 100) : 0;
+    html += '<div class="ws-item"><span style="flex:1">' + ck + '</span><span style="font-size:10px;color:#9ca3b8">' + cs.d + '/' + cs.t + '</span><div class="pb" style="width:60px;margin-top:0"><div class="pf" style="width:' + pct + '%;background:#2ed573"></div></div></div>';
+  }
+  html += '</div>';
+
+  html += '</div>'; // ws-grid
+
+  document.getElementById("weeklyBox").innerHTML = html;
+}
+
+function getWeekNumber(d) {
+  var start = new Date(d.getFullYear(), 0, 1);
+  var diff = d - start + (start.getTimezoneOffset() - d.getTimezoneOffset()) * 60000;
+  return Math.ceil((diff / 86400000 + start.getDay() - 1) / 7);
+}
+
+// Render Calendar view
+var calYear, calMonth;
+function renderCalendar(data) {
+  var now = new Date();
+  if (!calYear || !calMonth) { calYear = now.getFullYear(); calMonth = now.getMonth() + 1; }
+
+  var firstDay = new Date(calYear, calMonth - 1, 1);
+  var lastDay = new Date(calYear, calMonth, 0);
+  var totalDays = lastDay.getDate();
+  var startDow = firstDay.getDay(); // 0=Sun
+
+  // Build date -> tasks map
+  var dateMap = {};
+  for (var i = 0; i < data.length; i++) {
+    var dd = data[i].d;
+    if (!dd || dd === "") continue;
+    if (!dateMap[dd]) dateMap[dd] = [];
+    dateMap[dd].push(data[i]);
+  }
+
+  // Month names
+  var months = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+
+  var html = '';
+  // Header
+  html += '<div class="cal-header">';
+  html += '<button onclick="changeMonth(-1)">&larr; 上月</button>';
+  html += '<span class="cal-month">' + calYear + '年 ' + months[calMonth-1] + '</span>';
+  html += '<button onclick="changeMonth(1)">下月 &rarr;</button>';
+  html += '<button onclick="goToToday()" style="font-size:10px">今天</button>';
+  html += '</div>';
+
+  // Legend
+  html += '<div style="display:flex;gap:12px;font-size:10px;color:#9ca3b8;margin-bottom:8px;justify-content:center">';
+  html += '<span><span class="cal-dot done-bg" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px"></span>已完成</span>';
+  html += '<span><span class="cal-dot todo-bg" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px"></span>待办</span>';
+  html += '<span><span class="cal-dot wait-bg" style="display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px"></span>等待</span>';
+  html += '</div>';
+
+  // Day of week header
+  var dows = ["日","一","二","三","四","五","六"];
+  html += '<div class="cal-grid">';
+  for (var di = 0; di < 7; di++) {
+    html += '<div class="cal-dow">' + dows[di] + '</div>';
+  }
+
+  // Fill leading empty cells
+  var prevMonth = calMonth === 1 ? 12 : calMonth - 1;
+  var prevYear = calMonth === 1 ? calYear - 1 : calYear;
+  var prevLastDay = new Date(prevYear, prevMonth, 0).getDate();
+  for (var pi = 0; pi < startDow; pi++) {
+    var pd = prevLastDay - startDow + pi + 1;
+    var pds = formatDateStr(prevYear, prevMonth, pd);
+    html += '<div class="cal-day other"><div class="cal-dnum">' + pd + '</div><div class="cal-dots"></div></div>';
+  }
+
+  // Days of this month
+  for (var d = 1; d <= totalDays; d++) {
+    var ds = formatDateStr(calYear, calMonth, d);
+    var isToday = (ds === TODAY);
+    var tasksForDay = dateMap[ds] || [];
+    var hasDone = false, hasTodo = false, hasWait = false;
+
+    // Dots
+    var dotsHtml = '';
+    for (var ti = 0; ti < Math.min(tasksForDay.length, 5); ti++) {
+      var tt = tasksForDay[ti];
+      if (tt.s === "已完成") { hasDone = true; dotsHtml += '<span class="cal-dot done-bg"></span>'; }
+      else if (tt.s === "等待") { hasWait = true; dotsHtml += '<span class="cal-dot wait-bg"></span>'; }
+      else { hasTodo = true; dotsHtml += '<span class="cal-dot todo-bg"></span>'; }
+    }
+    if (tasksForDay.length > 5) dotsHtml += '<span style="font-size:8px;color:#9ca3b8">+' + (tasksForDay.length-5) + '</span>';
+
+    // Popup
+    var popHtml = '';
+    if (tasksForDay.length > 0) {
+      popHtml = '<div class="cal-day-pop">';
+      for (var pi = 0; pi < tasksForDay.length; pi++) {
+        var pt = tasksForDay[pi];
+        var psc = pt.s === "已完成" ? "done-c" : (pt.s === "等待" ? "wait-c" : "todo-c");
+        popHtml += '<div class="cp-item"><span class="cp-status ' + psc + '">' + pt.s + '</span><span style="color:#c4c9d4">' + pt.t + '</span></div>';
+      }
+      popHtml += '</div>';
+    }
+
+    html += '<div class="cal-day' + (isToday ? ' today' : '') + '" onclick="showDateTasks(\'' + ds + '\')">';
+    html += '<div class="cal-dnum">' + d + '</div>';
+    html += '<div class="cal-dots">' + dotsHtml + '</div>';
+    html += popHtml;
+    html += '</div>';
+  }
+
+  // Fill trailing empty cells
+  var endDow = (startDow + totalDays) % 7;
+  if (endDow > 0) {
+    var trailingCells = 7 - endDow;
+    for (var ti = 1; ti <= trailingCells; ti++) {
+      html += '<div class="cal-day other"><div class="cal-dnum">' + ti + '</div><div class="cal-dots"></div></div>';
+    }
+  }
+
+  html += '</div>'; // cal-grid
+
+  document.getElementById("calBox").innerHTML = html;
+}
+
+function formatDateStr(y, m, d) {
+  return y + "-" + String(m).padStart(2,'0') + "-" + String(d).padStart(2,'0');
+}
+
+function changeMonth(delta) {
+  var now = new Date();
+  if (!calYear || !calMonth) { calYear = now.getFullYear(); calMonth = now.getMonth() + 1; }
+  calMonth += delta;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1) { calMonth = 12; calYear--; }
+  doRender();
+}
+
+function goToToday() {
+  var now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth() + 1;
+  doRender();
+}
+
+// Show tasks for a specific date
+function showDateTasks(dateStr) {
+  var merged = getMergedTasks();
+  var tasks = [];
+  for (var i = 0; i < merged.length; i++) {
+    if (merged[i].d === dateStr) tasks.push(merged[i]);
+  }
+  if (tasks.length === 0) return;
+
+  var html = '<div style="font-size:12px;color:#6c8cff;margin-bottom:8px">' + dateStr + ' 任务 (' + tasks.length + ')</div>';
+  for (var i = 0; i < tasks.length; i++) {
+    html += makeCard(tasks[i]);
+  }
+  document.getElementById("detailMd").innerHTML = html + '<div style="margin-top:8px"><button onclick="closeMo()" style="background:#3a3f55;color:#9ca3b8;padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none">关闭</button></div>';
+  document.getElementById("detailMo").classList.add("show");
+}
+
 // Main render function
 function doRender() {
   var data = getFiltered();
@@ -560,6 +1010,9 @@ function doRender() {
   renderStats(data);
   renderKanban(data);
   renderTimeline(data);
+  renderGantt(data);
+  renderWeekly(data);
+  renderCalendar(data);
   renderAll(data);
   renderFilters();
 }
@@ -576,6 +1029,8 @@ function switchTab(name, tabEl) {
   tabEl.className = "tab on";
   var vw = document.getElementById("v-" + name);
   if (vw) vw.className = "vw on";
+  // Re-render calendar if switching to it
+  if (name === "calendar") renderCalendar(getFiltered());
 }
 
 // Filter

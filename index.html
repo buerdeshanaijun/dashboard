@@ -144,6 +144,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .sync-badge{font-size:10px;color:#778ca3;margin-top:4px}
 .sync-badge.ok{color:#2ed573}
 .sync-badge.err{color:#ff4d6a}
+.search-wrap{display:flex;align-items:center;gap:6px;background:#1a1d28;border:1px solid #2a2e3f;border-radius:8px;padding:2px 10px;flex:1;min-width:120px;max-width:280px;transition:border-color .2s}
+.search-wrap:focus-within{border-color:#6c8cff}
+.search-wrap .sicon{color:#5a6078;font-size:14px;pointer-events:none}
+.search-wrap input{background:transparent;border:none;color:#e8eaf0;font-size:13px;padding:6px 0;outline:none;width:100%;font-family:inherit}
+.search-wrap input::placeholder{color:#5a6078}
+.search-clear{display:none;background:none;border:none;color:#5a6078;cursor:pointer;font-size:14px;padding:2px 2px}
+.search-clear.show{display:block}
+.search-empty{color:#5a6078;font-size:13px;text-align:center;padding:32px 12px}
+.notif-badge{position:relative;display:inline-flex;align-items:center;gap:4px;background:rgba(108,140,255,.12);color:#6c8cff;border:1px solid rgba(108,140,255,.25);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.notif-badge.enabled{background:rgba(46,213,115,.13);color:#2ed573;border-color:rgba(46,213,115,.28)}
+.notif-badge:active{transform:scale(.95)}
+.chart-wrap{background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:10px;position:relative;min-height:200px}
+.chart-wrap h3{font-size:12px;font-weight:700;margin-bottom:10px;color:#6c8cff}
 .loading{text-align:center;padding:60px 20px;color:#9ca3b8;font-size:14px}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:24px;height:24px;border:3px solid #2a2e3f;border-top-color:#6c8cff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
@@ -162,9 +175,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   </div>
   <div class="hd-badges">
     <span class="dbadge" id="todayBadge"></span>
+    <div class="search-wrap">
+      <span class="sicon">&#128270;</span>
+      <input type="text" id="searchInput" placeholder="搜索任务..." oninput="onSearch(this.value)" autocomplete="off">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
+    </div>
     <span class="refresh-btn" onclick="refreshData()">&#8635; 刷新</span>
     <span class="sync-export-btn" id="syncBtn" onclick="exportChanges()" title="导出本地修改，粘贴给Claw同步">&#128206; 同步变更 <span id="syncCount"></span></span>
     <span class="sync-clear-btn" id="clearBtn" onclick="clearLocalChanges()" style="display:none">&#10005; 清除本地</span>
+    <span class="notif-badge" id="notifBtn" onclick="requestNotify()">&#128276; 通知</span>
+    <span class="refresh-btn" onclick="exportCSV()" title="导出任务为CSV文件">&#128229; 导出CSV</span>
   </div>
 </div>
 
@@ -228,6 +248,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 // ===== GLOBALS =====
 var TASKS = [];
 var filterCat = "全部";
+var searchQuery = "";
 var TODAY = "";
 var DATA_VERSION = "";
 
@@ -383,6 +404,261 @@ function clearLocalChanges() {
   }
 }
 
+// ===== SEARCH =====
+function onSearch(val) {
+  searchQuery = val.trim();
+  var clearBtn = document.getElementById("searchClear");
+  if (searchQuery !== "") {
+    clearBtn.classList.add("show");
+  } else {
+    clearBtn.classList.remove("show");
+  }
+  doRender();
+}
+
+function clearSearch() {
+  document.getElementById("searchInput").value = "";
+  searchQuery = "";
+  document.getElementById("searchClear").classList.remove("show");
+  doRender();
+}
+
+// ===== CSV EXPORT =====
+function exportCSV() {
+  var data = getMergedTasks();
+  if (data.length === 0) { showToast("没有可导出的数据"); return; }
+
+  // BOM for Excel Chinese support
+  var bom = "\uFEFF";
+  var rows = [["ID","任务","类别","优先级","状态","截止日期","进度","描述"]];
+  for (var i = 0; i < data.length; i++) {
+    var t = data[i];
+    rows.push([t.id, t.t, t.c, t.p, t.s, t.d || "", t.pg + "%", (t.ds || "").replace(/"/g,"'")]);
+  }
+
+  var csv = bom;
+  for (var i = 0; i < rows.length; i++) {
+    var vals = [];
+    for (var j = 0; j < rows[i].length; j++) {
+      var v = String(rows[i][j]);
+      if (v.indexOf(",") !== -1 || v.indexOf('"') !== -1 || v.indexOf("\n") !== -1) {
+        v = '"' + v.replace(/"/g,'""') + '"';
+      }
+      vals.push(v);
+    }
+    csv += vals.join(",") + "\n";
+  }
+
+  var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "工作计划_" + TODAY + ".csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("已导出 " + data.length + " 条任务");
+}
+
+// ===== NOTIFICATIONS =====
+function requestNotify() {
+  if (!("Notification" in window)) {
+    showToast("当前浏览器不支持桌面通知");
+    return;
+  }
+  if (Notification.permission === "granted") {
+    showToast("通知已开启 ✓");
+    return;
+  }
+  Notification.requestPermission().then(function(p) {
+    if (p === "granted") {
+      showToast("通知已开启 ✓");
+      updateNotifBadge(true);
+      checkTodayTasks();
+    } else {
+      showToast("通知被拒绝，可在浏览器设置中开启");
+    }
+  });
+}
+
+function updateNotifBadge(enabled) {
+  var btn = document.getElementById("notifBtn");
+  if (enabled) btn.classList.add("enabled");
+  else btn.classList.remove("enabled");
+}
+
+function checkTodayTasks() {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  var merged = getMergedTasks();
+  var todayTasks = [];
+  for (var i = 0; i < merged.length; i++) {
+    if (merged[i].d === TODAY && merged[i].s !== "已完成") {
+      todayTasks.push(merged[i]);
+    }
+  }
+
+  if (todayTasks.length === 0) return;
+
+  var title = "📋 今日待办 (" + todayTasks.length + ")";
+  var body = todayTasks.slice(0, 3).map(function(t){ return t.t; }).join("、");
+  if (todayTasks.length > 3) body += " 等" + todayTasks.length + "项";
+
+  try {
+    var n = new Notification(title, {
+      body: body,
+      icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c8cff'%3E%3Cpath d='M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z'/%3E%3C/svg%3E"
+    });
+    setTimeout(function(){ n.close(); }, 8000);
+  } catch(e) {}
+}
+
+// ===== COMPLETION TREND CHART =====
+var trendChart = null;
+
+function renderTrendChart(data) {
+  // Count completed tasks per day (last 14 days)
+  var dayMap = {};
+  var today = new Date();
+  for (var i = 14; i >= 0; i--) {
+    var d = new Date(today);
+    d.setDate(d.getDate() - i);
+    var key = formatDate(d);
+    dayMap[key] = 0;
+  }
+
+  // We don't have exact completion dates, so use the task's "d" field as a proxy
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "已完成" && data[i].d && dayMap[data[i].d] !== undefined) {
+      dayMap[data[i].d]++;
+    }
+  }
+
+  var labels = Object.keys(dayMap);
+  var values = [];
+  for (var li = 0; li < labels.length; li++) {
+    values.push(dayMap[labels[li]]);
+  }
+
+  // Short labels (MM/DD)
+  var shortLabels = labels.map(function(d){ return d.substring(5); });
+
+  var chartBox = document.getElementById("trendChartBox");
+  if (!chartBox) return;
+
+  chartBox.innerHTML = '<canvas id="trendChartCanvas" role="img" aria-label="近14天任务完成趋势"></canvas>';
+
+  // Load Chart.js if not loaded
+  if (typeof Chart === "undefined") {
+    var script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
+    script.onload = function() { buildChart(shortLabels, values); };
+    document.head.appendChild(script);
+  } else {
+    buildChart(shortLabels, values);
+  }
+}
+
+function buildChart(labels, values) {
+  if (trendChart) trendChart.destroy();
+
+  var canvas = document.getElementById("trendChartCanvas");
+  if (!canvas) return;
+
+  var ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  trendChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "完成数量",
+        data: values,
+        backgroundColor: "rgba(108,140,255,.45)",
+        borderColor: "#6c8cff",
+        borderWidth: 1.5,
+        borderRadius: 4,
+        barPercentage: 0.6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1,
+            color: "#9ca3b8",
+            font: { size: 10 }
+          },
+          grid: { color: "rgba(255,255,255,.06)" }
+        },
+        x: {
+          ticks: {
+            color: "#9ca3b8",
+            font: { size: 9 },
+            maxRotation: 45
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ===== TASK DURATION STATS =====
+function calcDurationStats(data) {
+  var doneTasks = [];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "已完成" && data[i].d) {
+      doneTasks.push(data[i]);
+    }
+  }
+
+  if (doneTasks.length === 0) return null;
+
+  // Estimate duration: from id-based sequence (used id as creation order proxy)
+  // We'll categorize by category
+  var catCount = {}, catDone = {}, urgentDone = 0, urgentTotal = 0;
+  var thisWeekDone = 0;
+
+  var now = new Date();
+  var dayOfWeek = now.getDay();
+  var monday = new Date(now);
+  monday.setDate(now.getDate() - dayOfWeek + 1);
+  var sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  var ws = formatDate(monday);
+  var we = formatDate(sunday);
+
+  for (var i = 0; i < data.length; i++) {
+    var t = data[i];
+    var cat = t.c;
+    if (!catCount[cat]) { catCount[cat] = 0; catDone[cat] = 0; }
+    catCount[cat]++;
+    if (t.s === "已完成") catDone[cat]++;
+    if (t.s === "已完成" && t.d && t.d >= ws && t.d <= we) thisWeekDone++;
+    if (t.p === "紧急") { urgentTotal++; if (t.s === "已完成") urgentDone++; }
+  }
+
+  var doneRate = data.length > 0 ? Math.round(doneTasks.length / data.length * 100) : 0;
+
+  return {
+    total: data.length,
+    done: doneTasks.length,
+    rate: doneRate,
+    thisWeekDone: thisWeekDone,
+    catCount: catCount,
+    catDone: catDone,
+    urgentDone: urgentDone,
+    urgentTotal: urgentTotal
+  };
+}
+
 // Priority helpers
 var pCls = {"紧急":"bu","高":"bh","中":"bm","低":"bl"};
 var pOrd = {"紧急":0,"高":1,"中":2,"低":3};
@@ -484,12 +760,29 @@ function makeCard(x) {
 // Get filtered tasks (from merged data)
 function getFiltered() {
   var data = getMergedTasks();
-  if (filterCat === "全部") return data;
-  var result = [];
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].c === filterCat) result.push(data[i]);
+  // Category filter
+  if (filterCat !== "全部") {
+    var result = [];
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].c === filterCat) result.push(data[i]);
+    }
+    data = result;
   }
-  return result;
+  // Search filter
+  if (searchQuery !== "") {
+    var q = searchQuery.toLowerCase();
+    var result = [];
+    for (var i = 0; i < data.length; i++) {
+      var t = data[i];
+      if ((t.t && t.t.toLowerCase().indexOf(q) !== -1) ||
+          (t.ds && t.ds.toLowerCase().indexOf(q) !== -1) ||
+          (t.c && t.c.toLowerCase().indexOf(q) !== -1)) {
+        result.push(t);
+      }
+    }
+    data = result;
+  }
+  return data;
 }
 
 // Get all categories
@@ -851,6 +1144,35 @@ function renderWeekly(data) {
 
   html += '</div>'; // ws-grid
 
+  // Duration Stats & Trend Chart
+  var ds = calcDurationStats(data);
+  if (ds) {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">';
+    // Stats card
+    html += '<div class="ws-card" style="background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f">';
+    html += '<h3 style="color:#6c8cff;font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #6c8cff;display:flex;align-items:center;gap:6px">效率统计</h3>';
+    html += '<div class="ws-stat-group" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">';
+    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#2ed573">' + ds.done + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">已完成</div></div>';
+    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:' + (ds.rate > 50 ? '#2ed573' : '#ff9f43') + '">' + ds.rate + '%</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">完成率</div></div>';
+    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#ff9f43">' + ds.thisWeekDone + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">本周完成</div></div>';
+    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#ff4d6a">' + (ds.urgentTotal - ds.urgentDone) + '/' + ds.urgentTotal + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">紧急未完成</div></div>';
+    html += '</div>';
+    // Category completion
+    var catKeys = Object.keys(ds.catCount).sort(function(a,b){ return ds.catCount[b] - ds.catCount[a]; });
+    for (var ci = 0; ci < catKeys.length; ci++) {
+      var ck = catKeys[ci];
+      var cDone = ds.catDone[ck] || 0;
+      var cTotal = ds.catCount[ck];
+      var cPct = Math.round(cDone / cTotal * 100);
+      html += '<div class="ws-item" style="font-size:11px;padding:4px 0;border-bottom:1px solid #232738;display:flex;align-items:center;gap:6px"><span style="flex:1;color:#c4c9d4">' + ck + '</span><span style="color:#9ca3b8;font-size:10px">' + cDone + '/' + cTotal + '</span><div class="pb" style="width:60px;margin:0"><div class="pf" style="width:' + cPct + '%;background:#6c8cff"></div></div></div>';
+    }
+    html += '</div>';
+
+    // Chart card
+    html += '<div class="chart-wrap" style="background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:0"><h3 style="font-size:12px;font-weight:700;margin-bottom:10px;color:#6c8cff">近14天完成趋势</h3><div id="trendChartBox" style="height:180px"></div></div>';
+    html += '</div>'; // stats grid
+  }
+
   document.getElementById("weeklyBox").innerHTML = html;
 }
 
@@ -1015,6 +1337,13 @@ function doRender() {
   renderCalendar(data);
   renderAll(data);
   renderFilters();
+  // Render trend chart after weekly is rendered
+  setTimeout(function(){
+    var activeTab = document.querySelector(".tab.on");
+    if (activeTab && activeTab.textContent.trim() === "周总结") {
+      renderTrendChart(getMergedTasks());
+    }
+  }, 100);
 }
 
 // Tab switching
@@ -1031,6 +1360,10 @@ function switchTab(name, tabEl) {
   if (vw) vw.className = "vw on";
   // Re-render calendar if switching to it
   if (name === "calendar") renderCalendar(getFiltered());
+  // Render trend chart for weekly
+  if (name === "weekly") {
+    setTimeout(function(){ renderTrendChart(getMergedTasks()); }, 50);
+  }
 }
 
 // Filter
@@ -1079,6 +1412,12 @@ function closeMo() {
 fetchData(function() {
   updateSyncUI();
   doRender();
+
+  // Notification permission check
+  if ("Notification" in window && Notification.permission === "granted") {
+    updateNotifBadge(true);
+    checkTodayTasks();
+  }
 });
 
 // Auto refresh every 5 minutes

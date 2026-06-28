@@ -664,6 +664,9 @@ var pCls = {"紧急":"bu","高":"bh","中":"bm","低":"bl"};
 var pOrd = {"紧急":0,"高":1,"中":2,"低":3};
 
 // ===== FETCH DATA =====
+// Weekly summaries data
+var weeklySummaries = null;
+
 function fetchData(callback) {
   var url = "data.json?t=" + Date.now();
   var xhr = new XMLHttpRequest();
@@ -677,16 +680,21 @@ function fetchData(callback) {
         document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
         document.getElementById("syncStatus").className = "sync-badge ok";
         document.getElementById("updateTime").textContent = "数据版本: " + DATA_VERSION;
-        if (callback) callback();
+        // Load weekly summaries
+        loadWeeklySummaries(function() {
+          hideLoading();
+          if (callback) callback();
+        });
       } catch(e) {
         document.getElementById("syncStatus").textContent = "数据解析失败";
         document.getElementById("syncStatus").className = "sync-badge err";
+        hideLoading();
       }
     } else {
       document.getElementById("syncStatus").textContent = "加载失败 (" + xhr.status + ")";
       document.getElementById("syncStatus").className = "sync-badge err";
+      hideLoading();
     }
-    hideLoading();
   };
   xhr.onerror = function() {
     document.getElementById("syncStatus").textContent = "网络错误，请刷新重试";
@@ -699,6 +707,30 @@ function fetchData(callback) {
     hideLoading();
   };
   xhr.send();
+}
+
+function loadWeeklySummaries(callback) {
+  var sUrl = "weekly-summaries.json?t=" + Date.now();
+  var sxhr = new XMLHttpRequest();
+  sxhr.open("GET", sUrl, true);
+  sxhr.timeout = 5000;
+  sxhr.onload = function() {
+    if (sxhr.status === 200) {
+      try { weeklySummaries = JSON.parse(sxhr.responseText); } catch(e) { weeklySummaries = {}; }
+    } else {
+      weeklySummaries = {};
+    }
+    if (callback) callback();
+  };
+  sxhr.onerror = function() {
+    weeklySummaries = {};
+    if (callback) callback();
+  };
+  sxhr.ontimeout = function() {
+    weeklySummaries = {};
+    if (callback) callback();
+  };
+  sxhr.send();
 }
 
 function hideLoading() {
@@ -1114,6 +1146,21 @@ function renderWeekly(data) {
   }
   html += '</div>';
   html += '</div></div>';
+
+  // Weekly AI Summary
+  var wn = getWeekNumber(monday);
+  var yr = monday.getFullYear();
+  var wkKey = yr + '-W' + (wn < 10 ? '0' : '') + wn;
+  var sumText = weeklySummaries ? weeklySummaries[wkKey] : null;
+  if (sumText) {
+    html += '<div style="background:linear-gradient(135deg,#1a2428,#1a1d28);border:1px solid #2a5065;border-radius:10px;padding:14px;margin-bottom:10px">';
+    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
+    html += '<span style="font-size:12px;color:#4fc3f7;font-weight:700">&#128220; 本周AI总结</span>';
+    html += '<span style="font-size:9px;color:#9ca3b8">(自动生成·每周日23:00)</span>';
+    html += '</div>';
+    html += '<div style="font-size:12px;color:#c4c9d4;line-height:1.7;padding:8px;background:rgba(79,195,247,.06);border-radius:6px">' + sumText.replace(/\n/g, '<br>') + '</div>';
+    html += '</div>';
+  }
 
   // Stats grid
   html += '<div class="ws-stat-group">';

@@ -1028,10 +1028,27 @@ function formatDate(d) {
   return y+"-"+m+"-"+dd;
 }
 
+// Weekly navigation
+var weekOffset = 0;
+
+function changeWeek(delta) {
+  weekOffset += delta;
+  doRender();
+  // Scroll to weekly view
+  var wv = document.getElementById("v-weekly");
+  if (wv) wv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetWeek() {
+  weekOffset = 0;
+  doRender();
+}
+
 // Render Weekly Summary
 function renderWeekly(data) {
-  // Get current week range (Mon-Sun)
+  // Get week range based on offset (Mon-Sun)
   var now = new Date();
+  now.setDate(now.getDate() + weekOffset * 7);
   var dayOfWeek = now.getDay();
   var monday = new Date(now);
   monday.setDate(now.getDate() - dayOfWeek + 1);
@@ -1078,11 +1095,25 @@ function renderWeekly(data) {
   }
 
   var html = '';
-  // Week header
+  // Week header with navigation
   html += '<div style="background:linear-gradient(135deg,#1a1d28,#252a3a);border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:10px">';
-  html += '<div style="font-size:14px;font-weight:700;color:#6c8cff">第 ' + getWeekNumber(monday) + ' 周总结</div>';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+  html += '<div style="display:flex;align-items:center;gap:8px">';
+  html += '<button onclick="changeWeek(-1)" style="background:#2a2e3f;border:1px solid #3a3f55;color:#9ca3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">&larr; 上周</button>';
+  html += '<button onclick="changeWeek(1)" style="background:#2a2e3f;border:1px solid #3a3f55;color:#9ca3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">下周 &rarr;</button>';
+  html += '</div>';
+  html += '<div style="text-align:center">';
+  html += '<div style="font-size:14px;font-weight:700;color:#6c8cff">' + (weekOffset === 0 ? '本周' : (weekOffset < 0 ? (-weekOffset) + '周前' : weekOffset + '周后')) + ' · 第 ' + getWeekNumber(monday) + ' 周</div>';
   html += '<div style="font-size:10px;color:#9ca3b8;margin-top:2px">' + ws + ' ~ ' + we + '</div>';
   html += '</div>';
+  html += '<div style="display:flex;align-items:center;gap:8px">';
+  if (weekOffset !== 0) {
+    html += '<button onclick="resetWeek()" style="background:rgba(108,140,255,.15);border:1px solid rgba(108,140,255,.3);color:#6c8cff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">回到本周</button>';
+  } else {
+    html += '<span style="width:70px"></span>';
+  }
+  html += '</div>';
+  html += '</div></div>';
 
   // Stats grid
   html += '<div class="ws-stat-group">';

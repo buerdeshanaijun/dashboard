@@ -180,7 +180,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
       <input type="text" id="searchInput" placeholder="搜索任务..." oninput="onSearch(this.value)" autocomplete="off">
       <button class="search-clear" id="searchClear" onclick="clearSearch()">&#10005;</button>
     </div>
-    <span class="refresh-btn" onclick="refreshData()">&#8635; 刷新</span>
+    <span class="refresh-btn" onclick="refreshData()">&#8635; 刷新 <span id="refreshTimer" style="font-size:9px;color:#5a6078;font-weight:400"></span></span>
     <span class="sync-export-btn" id="syncBtn" onclick="exportChanges()" title="导出本地修改，粘贴给Claw同步">&#128206; 同步变更 <span id="syncCount"></span></span>
     <span class="sync-clear-btn" id="clearBtn" onclick="clearLocalChanges()" style="display:none">&#10005; 清除本地</span>
     <span class="notif-badge" id="notifBtn" onclick="requestNotify()">&#128276; 通知</span>
@@ -241,7 +241,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="ft">
   手动完成任务后点击「同步变更」按钮 → 粘贴给 Claw 即可同步到记忆<br>
-  <span id="updateTime"></span>
+  <span id="updateTime"></span> <span id="dataAge" style="font-size:10px;color:#5a6078"></span>
 </div>
 
 <script>
@@ -677,6 +677,7 @@ function fetchData(callback) {
       try {
         TASKS = JSON.parse(xhr.responseText);
         DATA_VERSION = new Date().toLocaleString("zh-CN");
+        lastFetchTime = Date.now();
         document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
         document.getElementById("syncStatus").className = "sync-badge ok";
         document.getElementById("updateTime").textContent = "数据版本: " + DATA_VERSION;
@@ -744,7 +745,9 @@ function hideLoading() {
 function refreshData() {
   document.getElementById("syncStatus").textContent = "正在刷新...";
   document.getElementById("syncStatus").className = "sync-badge";
+  document.getElementById("refreshTimer").textContent = "...";
   fetchData(function() {
+    lastFetchTime = Date.now();
     doRender();
     showToast("数据已刷新");
   });
@@ -1498,13 +1501,29 @@ fetchData(function() {
   }
 });
 
-// Auto refresh every 5 minutes
+// Auto refresh every 20 seconds for near-real-time
+var lastFetchTime = Date.now();
 setInterval(function() {
-  fetchData(function() {
-    updateSyncUI();
-    doRender();
-  });
-}, 300000);
+  var secs = Math.round((Date.now() - lastFetchTime) / 1000);
+  var btn = document.getElementById("refreshTimer");
+  if (btn) btn.textContent = secs + "s";
+  var ageEl = document.getElementById("dataAge");
+  if (ageEl) {
+    if (secs < 60) ageEl.textContent = "· " + secs + "秒前更新";
+    else ageEl.textContent = "· " + Math.round(secs/60) + "分钟前更新";
+  }
+  if (secs >= 20) {
+    fetchData(function() {
+      updateSyncUI();
+      doRender();
+      lastFetchTime = Date.now();
+      if (btn) btn.textContent = "";
+    });
+  }
+}, 1000);
+
+// Override fetchData to track time
+var _origFetchCb = null;
 </script>
 </body>
 </html>

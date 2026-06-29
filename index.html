@@ -52,7 +52,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tc-toggle.checked:hover,.tc-toggle.checked:active{background:#ff4d6a;border-color:#ff4d6a;color:#fff}
 .tc.done .tc-toggle.checked{background:rgba(46,213,115,.5);border-color:rgba(46,213,115,.5)}
 .tt{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.35;padding-right:34px}
-.td2{font-size:10.5px;color:#9ca3b8;line-height:1.4;margin-bottom:6px}
+.td2{font-size:10.5px;color:#9ca3b8;line-height:1.4;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
+.td2.trunc{max-height:2.8em;position:relative}
+.td2.trunc::after{content:'';position:absolute;bottom:0;right:0;width:50px;height:1.2em;background:linear-gradient(to right,transparent,#1a1d28)}
+.tc:hover .td2.trunc::after{background:linear-gradient(to right,transparent,#252838)}
+.tc:hover .td2.trunc{-webkit-line-clamp:unset;max-height:none}
+.td2 .ds-bullet{display:block;padding-left:12px;position:relative;margin-top:1px}
+.td2 .ds-bullet::before{content:'•';position:absolute;left:0;color:#6c8cff}
 .mg{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
 .bg{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9.5px;font-weight:600}
 .bu{background:rgba(255,77,106,.18);color:#ff4d6a}
@@ -778,10 +784,19 @@ function makeCard(x) {
   var localBadge = x._local ? '<span class="blocal">本地修改</span>' : '';
   var toggleCls = done ? ' checked' : '';
 
+  // Truncate long descriptions: show first ~55 chars on card
+  var ds = x.ds || '';
+  var dsHtml = ds;
+  if (ds.length > 55) {
+    dsHtml = '<div class="td2 trunc" title="' + ds.replace(/"/g,'&quot;') + '">' + ds + '</div>';
+  } else {
+    dsHtml = '<div class="td2">' + ds + '</div>';
+  }
+
   return '<div class="tc' + (done ? ' done' : '') + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')">' +
     '<button class="tc-toggle' + toggleCls + '" onclick="event.stopPropagation();toggleComplete(' + x.id + ')" title="' + (done ? '点击恢复待办' : '点击标记完成') + '">' + (done ? '✓' : '') + '</button>' +
     '<div class="tt">' + x.t + localBadge + '</div>' +
-    '<div class="td2">' + x.ds + '</div>' +
+    dsHtml +
     '<div class="mg">' +
       '<span class="bg ' + pc + '">' + x.p + '</span>' +
       '<span class="bg ' + cc + '">' + x.c + '</span>' +
@@ -1467,9 +1482,25 @@ function openDetail(id) {
   var cc = x.c === "私人事务" ? "bp" : "bc";
 
   var md = document.getElementById("detailMd");
+
+  // Format description: break multi-event descriptions into bullet points
+  var ds = x.ds || '';
+  var dsHtml = '';
+  // Split by common separators and filter empty items
+  var items = ds.split(/[；;。\n]+/).map(function(s){return s.trim();}).filter(function(s){return s.length > 0;});
+  if (items.length > 1 && ds.length > 80) {
+    dsHtml = '<div class="vl">';
+    for (var di = 0; di < items.length; di++) {
+      dsHtml += '<span class="ds-bullet">' + items[di] + '</span>';
+    }
+    dsHtml += '</div>';
+  } else {
+    dsHtml = '<div class="vl">' + ds + '</div>';
+  }
+
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label><div class="vl">' + x.ds + '</div></div>' +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
       '<div><label>优先级</label><div class="vl"><span class="bg ' + pc + '">' + x.p + '</span></div></div>' +

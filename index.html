@@ -203,6 +203,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="tab" onclick="switchTab('weekly',this)">周总结</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
   <div class="tab" onclick="switchTab('all',this)">全部任务</div>
+  <div class="tab" onclick="switchTab('done',this)">&#10003; 已完成</div>
 </div>
 
 <div id="loadingArea" style="padding:40px 16px;text-align:center">
@@ -215,7 +216,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="kb">
     <div class="kc td"><h3>待办</h3><div id="kb-todo"></div></div>
     <div class="kc wt"><h3>等待中</h3><div id="kb-wait"></div></div>
-    <div class="kc dn"><h3>已完成</h3><div id="kb-done"></div></div>
+    <div class="kc dn" id="kb-done-col" style="cursor:pointer" onclick="document.querySelector('.tab:last-child').click()"><h3>已完成</h3><div id="kb-done-summary"></div></div>
   </div>
 </div>
 
@@ -240,6 +241,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="vw" id="v-calendar" style="display:none">
   <div id="calBox" style="padding:0 4px"></div>
+</div>
+
+<div class="vw" id="v-done" style="display:none">
+  <div class="fbar" id="fd"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div style="font-size:12px;color:#9ca3b8" id="doneStats"></div>
+    <div style="display:flex;gap:6px">
+      <span class="fb on" id="doneSortDate" onclick="sortDone('date')" style="font-size:10px">按日期 &#9660;</span>
+      <span class="fb" id="doneSortCat" onclick="sortDone('cat')" style="font-size:10px">按类别</span>
+    </div>
+  </div>
+  <div id="donebox"></div>
 </div>
 
 <div class="mo" id="detailMo" onclick="if(event.target===this)closeMo()"><div class="md" id="detailMd" onclick="event.stopPropagation()"></div></div>
@@ -874,14 +887,29 @@ function renderKanban(data) {
   wtList.sort(sortP);
   dnList.sort(sortP);
 
-  var htmlTd = "", htmlWt = "", htmlDn = "";
+  var htmlTd = "", htmlWt = "";
   for (var j = 0; j < tdList.length; j++) htmlTd += makeCard(tdList[j]);
   for (var j = 0; j < wtList.length; j++) htmlWt += makeCard(wtList[j]);
-  for (var j = 0; j < dnList.length; j++) htmlDn += makeCard(dnList[j]);
 
   document.getElementById("kb-todo").innerHTML = htmlTd || '<div class="empty">暂无待办 &#127881;</div>';
   document.getElementById("kb-wait").innerHTML = htmlWt || '<div class="empty">暂无等待</div>';
-  document.getElementById("kb-done").innerHTML = htmlDn || '<div class="empty">暂无完成</div>';
+
+  // Collapsed "已完成" column
+  var dnHtml = '<div style="text-align:center;padding:8px 4px">';
+  dnHtml += '<div style="font-size:28px;font-weight:800;color:#2ed573">' + dnList.length + '</div>';
+  dnHtml += '<div style="font-size:10px;color:#9ca3b8;margin:2px 0 6px">条任务已完成</div>';
+  // Show latest 3 completed
+  var recent = dnList.slice(-3).reverse();
+  for (var ri = 0; ri < recent.length; ri++) {
+    dnHtml += '<div style="font-size:11px;color:#778ca3;text-align:left;padding:3px 4px;border-bottom:1px solid #232738;display:flex;align-items:center;gap:4px">';
+    dnHtml += '<span style="color:#2ed573;font-size:10px">&#10003;</span>';
+    dnHtml += '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">' + recent[ri].t + '</span>';
+    dnHtml += '<span style="color:#5a6078;font-size:9px">' + (recent[ri].d||'') + '</span>';
+    dnHtml += '</div>';
+  }
+  dnHtml += '<div style="margin-top:10px;padding:6px 12px;background:rgba(46,213,115,.12);color:#2ed573;border-radius:6px;font-size:12px;font-weight:600;display:inline-block">点击查看全部 &#8599;</div>';
+  dnHtml += '</div>';
+  document.getElementById("kb-done-summary").innerHTML = dnHtml;
 }
 
 // Render timeline
@@ -953,10 +981,111 @@ function renderAll(data) {
   document.getElementById("allbox").innerHTML = html;
 }
 
+// ===== Done-only view state =====
+var doneSortBy = "date";
+
+function sortDone(type) {
+  doneSortBy = type;
+  document.getElementById("doneSortDate").className = "fb" + (type === "date" ? " on" : "");
+  document.getElementById("doneSortCat").className = "fb" + (type === "cat" ? " on" : "");
+  var data = getFiltered();
+  data.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+  renderDone(data);
+}
+
+// Render completed-only view
+function renderDone(data) {
+  // Filter only completed tasks
+  var doneTasks = [];
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "已完成") doneTasks.push(data[i]);
+  }
+
+  if (doneTasks.length === 0) {
+    document.getElementById("donebox").innerHTML = '<div class="empty">暂无已完成任务 &#128531;</div>';
+    document.getElementById("doneStats").textContent = "";
+    return;
+  }
+
+  // Sort
+  if (doneSortBy === "date") {
+    doneTasks.sort(function(a,b){ return (b.d||"0") < (a.d||"0") ? -1 : (b.d||"0") > (a.d||"0") ? 1 : 0; });
+  } else {
+    doneTasks.sort(function(a,b){ return a.c < b.c ? -1 : a.c > b.c ? 1 : (b.d||"0") < (a.d||"0") ? -1 : 1; });
+  }
+
+  // Stats
+  var catStats = {};
+  for (var i = 0; i < doneTasks.length; i++) {
+    var c = doneTasks[i].c;
+    if (!catStats[c]) catStats[c] = 0;
+    catStats[c]++;
+  }
+  var catKeys = Object.keys(catStats).sort(function(a,b){ return catStats[b] - catStats[a]; });
+
+  // Update stats
+  var statsHtml = '共 <strong style="color:#2ed573">' + doneTasks.length + '</strong> 条已完成';
+  if (catKeys.length > 0) {
+    statsHtml += ' &middot; ';
+    statsHtml += catKeys.map(function(k){ return k + ' ' + catStats[k]; }).join(' &middot; ');
+  }
+  document.getElementById("doneStats").innerHTML = statsHtml;
+
+  // Group by date or category
+  var html = '';
+
+  if (doneSortBy === "date") {
+    // Group by date
+    var groups = {};
+    for (var i = 0; i < doneTasks.length; i++) {
+      var d = doneTasks[i].d || "未排期";
+      if (!groups[d]) groups[d] = [];
+      groups[d].push(doneTasks[i]);
+    }
+    var dates = Object.keys(groups).sort(function(a,b){ return a < b ? 1 : a > b ? -1 : 0; });
+
+    for (var di = 0; di < dates.length; di++) {
+      var d = dates[di];
+      var cls = d === "未排期" ? "" : "";
+      var dayLabel = d;
+      if (d === TODAY) dayLabel = d + " &#128205; 今天";
+      html += '<div class="tg">';
+      html += '<div class="tldate" style="color:#2ed573">' + dayLabel + ' <span style="font-size:10px;color:#9ca3b8;font-weight:400">(' + groups[d].length + ')</span></div>';
+      groups[d].sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+      for (var ji = 0; ji < groups[d].length; ji++) {
+        html += makeCard(groups[d][ji]);
+      }
+      html += '</div>';
+    }
+  } else {
+    // Group by category
+    var catGroups = {};
+    for (var i = 0; i < doneTasks.length; i++) {
+      var c = doneTasks[i].c;
+      if (!catGroups[c]) catGroups[c] = [];
+      catGroups[c].push(doneTasks[i]);
+    }
+    var sortedCats = Object.keys(catGroups).sort();
+    for (var ci = 0; ci < sortedCats.length; ci++) {
+      var c = sortedCats[ci];
+      html += '<div class="tg">';
+      var cc = c === "私人事务" ? "#ec64a6" : "#6c8cff";
+      html += '<div class="tldate" style="color:' + cc + '">' + c + ' <span style="font-size:10px;color:#9ca3b8;font-weight:400">(' + catGroups[c].length + ')</span></div>';
+      catGroups[c].sort(function(a,b){ return (b.d||"0") < (a.d||"0") ? -1 : (b.d||"0") > (a.d||"0") ? 1 : 0; });
+      for (var ji = 0; ji < catGroups[c].length; ji++) {
+        html += makeCard(catGroups[c][ji]);
+      }
+      html += '</div>';
+    }
+  }
+
+  document.getElementById("donebox").innerHTML = html;
+}
+
 // Render filter buttons
 function renderFilters() {
   var cats = getCategories();
-  var ids = ["fk","ft","fg","fa"];
+  var ids = ["fk","ft","fg","fa","fd"];
   for (var fi = 0; fi < ids.length; fi++) {
     var html = "";
     for (var ci = 0; ci < cats.length; ci++) {
@@ -1432,6 +1561,7 @@ function doRender() {
   renderWeekly(data);
   renderCalendar(data);
   renderAll(data);
+  renderDone(data);
   renderFilters();
   // Render trend chart after weekly is rendered
   setTimeout(function(){
@@ -1456,6 +1586,7 @@ function switchTab(name, tabEl) {
   if (vw) vw.className = "vw on";
   // Re-render calendar if switching to it
   if (name === "calendar") renderCalendar(getFiltered());
+  if (name === "done") renderDone(getMergedTasks());
   // Render trend chart for weekly
   if (name === "weekly") {
     setTimeout(function(){ renderTrendChart(getMergedTasks()); }, 50);

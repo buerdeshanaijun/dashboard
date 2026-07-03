@@ -1199,7 +1199,7 @@ function renderOverview(data) {
     // Completed
     if (g.done.length > 0) {
       html += '<div style="margin-top:8px;margin-bottom:4px">';
-      html += '<span style="font-size:10px;font-weight:700;color:#2ed573;letter-spacing:1px;cursor:pointer" onclick="var el=this.nextElementSibling;el.style.display=el.style.display==\'none\'?\'block\':\'none\'">&#9654; 已完成 ' + g.done.length + '</span></div>';
+      html += '<span style="font-size:10px;font-weight:700;color:#2ed573;letter-spacing:1px;cursor:pointer" onclick="var el=this.parentNode.nextElementSibling;el.style.display=el.style.display==\'none\'?\'block\':\'none\'">&#9654; 已完成 ' + g.done.length + '</span></div>';
       html += '<div style="display:none">';
       g.done.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
       for (var di = 0; di < g.done.length; di++) {

@@ -217,6 +217,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
   <div class="tab" onclick="switchTab('timeline',this)">时间线</div>
   <div class="tab" onclick="switchTab('gantt',this)">甘特图</div>
   <div class="tab" onclick="switchTab('weekly',this)">周总结</div>
+  <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
   <div class="tab" onclick="switchTab('all',this)">全部任务</div>
   <div class="tab" onclick="switchTab('done',this)">&#10003; 已完成</div>
@@ -257,6 +258,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 
 <div class="vw" id="v-calendar" style="display:none">
   <div id="calBox" style="padding:0 4px"></div>
+</div>
+
+<div class="vw" id="v-overview" style="display:none">
+  <div id="overviewBox" style="padding:0 4px"></div>
 </div>
 
 <div class="vw" id="v-done" style="display:none">
@@ -713,7 +718,9 @@ function fetchData(callback) {
         TASKS = JSON.parse(xhr.responseText);
         DATA_VERSION = new Date().toLocaleString("zh-CN");
         lastFetchTime = Date.now();
-        document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
+      var loadTimeEl = document.getElementById("loadTime");
+      if (loadTimeEl) loadTimeEl.textContent = DATA_VERSION;
+      document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
         document.getElementById("syncStatus").className = "sync-badge ok";
         document.getElementById("updateTime").textContent = "数据版本: " + DATA_VERSION;
         // Load weekly summaries
@@ -1119,6 +1126,125 @@ function renderDone(data) {
   }
 
   document.getElementById("donebox").innerHTML = html;
+}
+
+// Render all tasks overview by category
+function renderOverview(data) {
+  var cats = {};
+  for (var i = 0; i < data.length; i++) {
+    var c = data[i].c;
+    if (!cats[c]) cats[c] = { todo: [], progress: [], wait: [], done: [], subtask: 0, subtaskDone: 0, total: 0, doneCount: 0 };
+    var g = cats[c];
+    g.total++;
+    if (data[i].s === "已完成") { g.done.push(data[i]); g.doneCount++; }
+    else if (data[i].s === "进行中") g.progress.push(data[i]);
+    else if (data[i].s === "等待") g.wait.push(data[i]);
+    else g.todo.push(data[i]);
+    // Count subtask progress
+    if (data[i].st) {
+      g.subtask += data[i].st.length;
+      for (var si = 0; si < data[i].st.length; si++) {
+        if (data[i].st[si].s === "已完成") g.subtaskDone++;
+      }
+    }
+  }
+
+  var catOrder = Object.keys(cats).sort(function(a,b){
+    var aActive = cats[a].total - cats[a].doneCount;
+    var bActive = cats[b].total - cats[b].doneCount;
+    return bActive - aActive;
+  });
+
+  var html = '';
+  for (var ci = 0; ci < catOrder.length; ci++) {
+    var c = catOrder[ci];
+    var g = cats[c];
+    var pct = g.total > 0 ? Math.round(g.doneCount / g.total * 100) : 0;
+    var barClr = pct === 100 ? '#2ed573' : (pct > 50 ? '#ff9f43' : '#ff4d6a');
+
+    html += '<div style="background:#1a1d28;border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid #2a2e3f">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+    html += '<h3 style="font-size:15px;font-weight:700;color:#e8eaf0">' + c + '</h3>';
+    html += '<span style="font-size:12px;color:#9ca3b8">' + g.doneCount + '/' + g.total + ' (' + pct + '%)</span>';
+    html += '</div>';
+    html += '<div class="pb" style="margin-bottom:10px;height:5px"><div class="pf" style="width:' + pct + '%;background:' + barClr + ';height:5px;border-radius:3px"></div></div>';
+
+    // Pending tasks (todo + progress + wait)
+    var pending = g.todo.concat(g.progress).concat(g.wait);
+    var sortP = function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);};
+    pending.sort(function(a,b){
+      var pa = sortP(a), pb = sortP(b);
+      if (pa !== pb) return pa - pb;
+      return (a.d||"99") < (b.d||"99") ? -1 : 1;
+    });
+
+    if (pending.length > 0) {
+      html += '<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#ff9f43;letter-spacing:1px">待处理 ' + pending.length + '</span></div>';
+      for (var pi = 0; pi < pending.length; pi++) {
+        var t = pending[pi];
+        var pc = pCls[t.p] || "bm";
+        var stText = '';
+        if (t.st) {
+          var sd = 0; for (var si = 0; si < t.st.length; si++) { if (t.st[si].s === '已完成') sd++; }
+          stText = ' <span style="font-size:9px;color:#5a6078">' + sd + '/' + t.st.length + '</span>';
+        }
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid #232738;font-size:12px;color:#c4c9d4">';
+        html += '<span class="bg ' + pc + '" style="font-size:9px">' + t.p + '</span>';
+        html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + t.t + stText + '</span>';
+        html += '<span style="font-size:10px;color:#5a6078">' + (t.d||'') + '</span>';
+        html += '</div>';
+      }
+    }
+
+    // Completed
+    if (g.done.length > 0) {
+      html += '<div style="margin-top:8px;margin-bottom:4px">';
+      html += '<span style="font-size:10px;font-weight:700;color:#2ed573;letter-spacing:1px;cursor:pointer" onclick="var el=this.nextElementSibling;el.style.display=el.style.display==\'none\'?\'block\':\'none\'">&#9654; 已完成 ' + g.done.length + '</span></div>';
+      html += '<div style="display:none">';
+      g.done.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
+      for (var di = 0; di < g.done.length; di++) {
+        var t = g.done[di];
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;color:#778ca3">';
+        html += '<span style="color:#2ed573;font-size:10px">&#10003;</span>';
+        html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:line-through">' + t.t + '</span>';
+        html += '<span style="font-size:9px;color:#5a6078">' + (t.d||'') + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  // Subtask stats
+  var totalSub = 0, doneSub = 0;
+  for (var ci = 0; ci < catOrder.length; ci++) {
+    totalSub += cats[catOrder[ci]].subtask;
+    doneSub += cats[catOrder[ci]].subtaskDone;
+  }
+
+  // Header stats
+  var totalTasks = data.length;
+  var doneTasks = 0, todoTasks = 0, progTasks = 0, waitTasks = 0;
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].s === "已完成") doneTasks++;
+    else if (data[i].s === "进行中") progTasks++;
+    else if (data[i].s === "等待") waitTasks++;
+    else todoTasks++;
+  }
+
+  var headerHtml = '<div class="ws-stat-group" style="grid-template-columns:repeat(5,1fr);margin-bottom:12px">';
+  headerHtml += '<div class="ws-stat"><div class="num" style="color:#6c8cff">' + totalTasks + '</div><div class="lab">全部任务</div></div>';
+  headerHtml += '<div class="ws-stat"><div class="num" style="color:#ff9f43">' + todoTasks + '</div><div class="lab">待办</div></div>';
+  headerHtml += '<div class="ws-stat"><div class="num" style="color:#ffd93d">' + progTasks + '</div><div class="lab">进行中</div></div>';
+  headerHtml += '<div class="ws-stat"><div class="num" style="color:#778ca3">' + waitTasks + '</div><div class="lab">等待</div></div>';
+  headerHtml += '<div class="ws-stat"><div class="num" style="color:#2ed573">' + doneTasks + '</div><div class="lab">已完成</div></div>';
+  if (totalSub > 0) {
+    headerHtml += '<div class="ws-stat"><div class="num" style="color:#a55eea">' + doneSub + '/' + totalSub + '</div><div class="lab">子任务</div></div>';
+  }
+  headerHtml += '</div>';
+
+  document.getElementById("overviewBox").innerHTML = headerHtml + html;
 }
 
 // Render filter buttons
@@ -1623,10 +1749,10 @@ function switchTab(name, tabEl) {
   tabEl.className = "tab on";
   var vw = document.getElementById("v-" + name);
   if (vw) vw.className = "vw on";
-  // Re-render calendar if switching to it
+  // Lazy render
   if (name === "calendar") renderCalendar(getFiltered());
   if (name === "done") renderDone(getMergedTasks());
-  // Render trend chart for weekly
+  if (name === "overview") renderOverview(getMergedTasks());
   if (name === "weekly") {
     setTimeout(function(){ renderTrendChart(getMergedTasks()); }, 50);
   }
@@ -1726,7 +1852,7 @@ fetchData(function() {
   }
 });
 
-// Auto refresh every 20 seconds for near-real-time
+// Manual refresh only — no auto-fetch
 var lastFetchTime = Date.now();
 setInterval(function() {
   var secs = Math.round((Date.now() - lastFetchTime) / 1000);
@@ -1736,14 +1862,6 @@ setInterval(function() {
   if (ageEl) {
     if (secs < 60) ageEl.textContent = "· " + secs + "秒前更新";
     else ageEl.textContent = "· " + Math.round(secs/60) + "分钟前更新";
-  }
-  if (secs >= 20) {
-    fetchData(function() {
-      updateSyncUI();
-      doRender();
-      lastFetchTime = Date.now();
-      if (btn) btn.textContent = "";
-    });
   }
 }, 1000);
 

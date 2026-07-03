@@ -1171,7 +1171,7 @@ function renderOverview(data) {
 
     // Pending tasks (todo + progress + wait)
     var pending = g.todo.concat(g.progress).concat(g.wait);
-    var sortP = function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);};
+    var sortP = function(x){return pOrd[x.p] || 2;};
     pending.sort(function(a,b){
       var pa = sortP(a), pb = sortP(b);
       if (pa !== pb) return pa - pb;

@@ -166,6 +166,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .loading{text-align:center;padding:60px 20px;color:#9ca3b8;font-size:14px}
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:24px;height:24px;border:3px solid #2a2e3f;border-top-color:#6c8cff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+/* Subtask expand/collapse */
+.st-toggle{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#5a6078;cursor:pointer;padding:3px 8px 3px 4px;border-radius:4px;margin-top:0;background:rgba(120,120,140,.08);border:none;font-family:inherit;transition:all .15s}
+.st-toggle:hover{background:rgba(120,120,140,.18);color:#9ca3b8}
+.st-toggle .arr{display:inline-block;transition:transform .2s;font-size:8px;margin-right:2px}
+.st-toggle.open .arr{transform:rotate(90deg)}
+.st-toggle .scnt{font-size:9px;color:#5a6078}
+.st-wrap{display:none;margin-top:8px;padding-top:6px;border-top:1px dashed #2a2e3f}
+.st-wrap.open{display:block}
+.st-item{display:flex;align-items:center;gap:6px;padding:4px 4px;font-size:11px;color:#c4c9d4;border-radius:4px}
+.st-item:hover{background:rgba(255,255,255,.03)}
+.st-item.done{color:#778ca3;text-decoration:line-through}
+.st-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.st-dot.done{background:#2ed573}
+.st-dot.progress{background:#ff9f43}
+.st-dot.todo{background:#3a3f55;border:1.5px solid #5a6078}
+.st-date{font-size:9px;color:#5a6078;margin-left:auto;white-space:nowrap}
 @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.hd h1{font-size:15px}.md{padding:16px}.kc{min-height:80px}}
 </style>
 </head>
@@ -806,6 +822,28 @@ function makeCard(x) {
     dsHtml = '<div class="td2">' + ds + '</div>';
   }
 
+  // Subtask expand/collapse
+  var stHtml = '';
+  if (x.st && x.st.length > 0) {
+    var doneCnt = 0;
+    for (var si = 0; si < x.st.length; si++) { if (x.st[si].s === '已完成') doneCnt++; }
+    stHtml += '<div style="text-align:left;margin-top:1px">';
+    stHtml += '<button class="st-toggle" onclick="event.stopPropagation();toggleSub(' + x.id + ')" id="stb-' + x.id + '">';
+    stHtml += '<span class="arr">&#9654;</span> <span class="scnt">' + doneCnt + '/' + x.st.length + '</span></button>';
+    stHtml += '<div class="st-wrap" id="stw-' + x.id + '">';
+    for (var si = 0; si < x.st.length; si++) {
+      var sk = x.st[si];
+      var sDot = sk.s === '已完成' ? 'done' : (sk.s === '进行中' ? 'progress' : 'todo');
+      var sDone = sk.s === '已完成' ? ' done' : '';
+      stHtml += '<div class="st-item' + sDone + '">';
+      stHtml += '<span class="st-dot ' + sDot + '"></span>';
+      stHtml += '<span>' + sk.t + '</span>';
+      if (sk.d) stHtml += '<span class="st-date">' + sk.d + '</span>';
+      stHtml += '</div>';
+    }
+    stHtml += '</div></div>';
+  }
+
   return '<div class="tc' + (done ? ' done' : '') + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')">' +
     '<button class="tc-toggle' + toggleCls + '" onclick="event.stopPropagation();toggleComplete(' + x.id + ')" title="' + (done ? '点击恢复待办' : '点击标记完成') + '">' + (done ? '✓' : '') + '</button>' +
     '<div class="tt">' + x.t + localBadge + '</div>' +
@@ -817,6 +855,7 @@ function makeCard(x) {
       extraPg +
     '</div>' +
     '<div class="pb"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div>' +
+    stHtml +
   '</div>';
 }
 
@@ -1599,6 +1638,15 @@ function setFilter(cat) {
   doRender();
 }
 
+// Toggle subtask expand/collapse
+function toggleSub(id) {
+  var w = document.getElementById('stw-' + id);
+  var b = document.getElementById('stb-' + id);
+  if (!w || !b) return;
+  w.classList.toggle('open');
+  b.classList.toggle('open');
+}
+
 // Open detail modal
 function openDetail(id) {
   var merged = getMergedTasks();
@@ -1629,9 +1677,24 @@ function openDetail(id) {
     dsHtml = '<div class="vl">' + ds + '</div>';
   }
 
+  // Subtask list in modal
+  var stModalHtml = '';
+  if (x.st && x.st.length > 0) {
+    stModalHtml += '<div class="fl"><label>子任务 (' + x.st.length + '项)</label><div class="vl">';
+    for (var si = 0; si < x.st.length; si++) {
+      var sk = x.st[si];
+      var sIcon = sk.s === '已完成' ? '&#9989;' : (sk.s === '进行中' ? '&#128260;' : '&#9203;');
+      var sClr = sk.s === '已完成' ? '#2ed573' : (sk.s === '进行中' ? '#ff9f43' : '#778ca3');
+      stModalHtml += '<span class="ds-bullet" style="color:' + sClr + '">' + sIcon + ' ' + sk.t;
+      if (sk.d) stModalHtml += ' <span style="color:#5a6078;font-size:10px">' + sk.d + '</span>';
+      stModalHtml += '</span>';
+    }
+    stModalHtml += '</div></div>';
+  }
+
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
       '<div><label>优先级</label><div class="vl"><span class="bg ' + pc + '">' + x.p + '</span></div></div>' +

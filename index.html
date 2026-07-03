@@ -322,7 +322,7 @@ function getMergedTasks() {
   var changes = loadLocalChanges();
   var merged = [];
   for (var i = 0; i < base.length; i++) {
-    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg};
+    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st};
     var cid = String(task.id);
     if (changes[cid]) {
       var ch = changes[cid];

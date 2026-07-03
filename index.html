@@ -184,6 +184,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .st-dot.progress{background:#ff9f43}
 .st-dot.todo{background:#3a3f55;border:1.5px solid #5a6078}
 .st-date{font-size:9px;color:#5a6078;margin-left:auto;white-space:nowrap}
+.fl label .arr{display:inline-block;transition:transform .2s;margin-right:3px}
 @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.hd h1{font-size:15px}.md{padding:16px}.kc{min-height:80px}}
 </style>
 </head>
@@ -324,7 +325,7 @@ function getMergedTasks() {
   var changes = loadLocalChanges();
   var merged = [];
   for (var i = 0; i < base.length; i++) {
-    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st};
+    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st, g:base[i].g, updates:base[i].updates};
     var cid = String(task.id);
     if (changes[cid]) {
       var ch = changes[cid];
@@ -859,6 +860,7 @@ function makeCard(x) {
     dsHtml +
     '<div class="mg">' +
       '<span class="bg ' + pc + '">' + x.p + '</span>' +
+      (x.g ? '<span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span>' : '') +
       '<span class="bg ' + cc + '">' + x.c + '</span>' +
       '<span class="bg bd">' + x.d + '</span>' +
       extraPg +
@@ -998,6 +1000,7 @@ function renderAll(data) {
   html += '<tr style="border-bottom:2px solid #2a2e3f">';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8;width:30px">✓</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">任务</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">分组</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">类别</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">优先级</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">状态</th>';
@@ -1005,25 +1008,61 @@ function renderAll(data) {
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">进度</th>';
   html += '</tr>';
 
+  // Group by category, then by group within each category
+  var catGroups = {};
   for (var i = 0; i < data.length; i++) {
-    var x = data[i];
-    var sc = sClr[x.s] || "#9ca3b8";
-    var pc = pCls[x.p] || "bm";
-    var pg = pgColor(x.pg);
-    var strike = x.s === "已完成" ? "text-decoration:line-through;opacity:.55" : "";
-    var checkIcon = x.s === "已完成" ? '<span style="color:#2ed573;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">✓</span>' : '<span style="color:#3a3f55;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">○</span>';
-    var localMark = x._local ? ' <span class="blocal">本地</span>' : '';
+    var c = data[i].c;
+    if (!catGroups[c]) catGroups[c] = [];
+    catGroups[c].push(data[i]);
+  }
+  var cats = Object.keys(catGroups).sort(function(a,b){
+    var aAct = 0, bAct = 0;
+    for (var i = 0; i < catGroups[a].length; i++) if (catGroups[a][i].s !== "已完成") aAct++;
+    for (var i = 0; i < catGroups[b].length; i++) if (catGroups[b][i].s !== "已完成") bAct++;
+    return bAct - aAct;
+  });
 
-    html += '<tr style="border-bottom:1px solid #2a2e3f;cursor:pointer' + (x._local ? ';background:rgba(255,159,67,.06)' : '') + '" onclick="openDetail(' + x.id + ')">';
-    html += '<td style="padding:7px 6px;text-align:center">' + checkIcon + '</td>';
-    html += '<td style="padding:7px 6px;font-weight:630;' + strike + '">' + x.t + localMark + '</td>';
-    var cc = x.c === "私人事务" ? "bp" : "bc";
-    html += '<td style="padding:7px 6px"><span class="bg ' + cc + '">' + x.c + '</span></td>';
-    html += '<td style="padding:7px 6px"><span class="bg ' + pc + '">' + x.p + '</span></td>';
-    html += '<td style="padding:7px 6px;color:' + sc + ';font-weight:630">' + x.s + '</td>';
-    html += '<td style="padding:7px 6px;color:#9ca3b8">' + x.d + '</td>';
-    html += '<td style="padding:7px 6px"><div class="pb" style="width:56px"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div></td>';
-    html += '</tr>';
+  var rowNum = 0;
+  for (var ci = 0; ci < cats.length; ci++) {
+    var c = cats[ci];
+    var tasks = catGroups[c];
+    // Group within category
+    var groups = {};
+    for (var i = 0; i < tasks.length; i++) {
+      var gn = tasks[i].g || "其他";
+      if (!groups[gn]) groups[gn] = [];
+      groups[gn].push(tasks[i]);
+    }
+    var gnames = Object.keys(groups).sort();
+
+    for (var gi = 0; gi < gnames.length; gi++) {
+      var gn = gnames[gi];
+      var grpTasks = groups[gn];
+      // Group header row
+      html += '<tr style="background:rgba(108,140,255,.06)"><td colspan="8" style="padding:5px 6px;font-size:11px;font-weight:700;color:#6c8cff">' + c + ' · ' + gn + ' (' + grpTasks.length + '项)</td></tr>';
+
+      for (var i = 0; i < grpTasks.length; i++) {
+        var x = grpTasks[i];
+        var sc = sClr[x.s] || "#9ca3b8";
+        var pc = pCls[x.p] || "bm";
+        var pg = pgColor(x.pg);
+        var strike = x.s === "已完成" ? "text-decoration:line-through;opacity:.55" : "";
+        var checkIcon = x.s === "已完成" ? '<span style="color:#2ed573;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">✓</span>' : '<span style="color:#3a3f55;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">○</span>';
+        var localMark = x._local ? ' <span class="blocal">本地</span>' : '';
+        var cc = x.c === "私人事务" ? "bp" : "bc";
+
+        html += '<tr style="border-bottom:1px solid #2a2e3f;cursor:pointer' + (x._local ? ';background:rgba(255,159,67,.06)' : '') + '" onclick="openDetail(' + x.id + ')">';
+        html += '<td style="padding:7px 6px;text-align:center">' + checkIcon + '</td>';
+        html += '<td style="padding:7px 6px;font-weight:630;' + strike + '">' + x.t + localMark + '</td>';
+        html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8">' + gn + '</td>';
+        html += '<td style="padding:7px 6px"><span class="bg ' + cc + '">' + x.c + '</span></td>';
+        html += '<td style="padding:7px 6px"><span class="bg ' + pc + '">' + x.p + '</span></td>';
+        html += '<td style="padding:7px 6px;color:' + sc + ';font-weight:630">' + x.s + '</td>';
+        html += '<td style="padding:7px 6px;color:#9ca3b8">' + x.d + '</td>';
+        html += '<td style="padding:7px 6px"><div class="pb" style="width:56px"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div></td>';
+        html += '</tr>';
+      }
+    }
   }
   html += '</table></div>';
   document.getElementById("allbox").innerHTML = html;
@@ -1106,50 +1145,64 @@ function renderDone(data) {
       html += '</div>';
     }
   } else {
-    // Group by category
+    // Group by category, with sub-groups
     var catGroups = {};
     for (var i = 0; i < doneTasks.length; i++) {
       var c = doneTasks[i].c;
-      if (!catGroups[c]) catGroups[c] = [];
-      catGroups[c].push(doneTasks[i]);
+      if (!catGroups[c]) catGroups[c] = {};
+      var gn = doneTasks[i].g || "其他";
+      if (!catGroups[c][gn]) catGroups[c][gn] = [];
+      catGroups[c][gn].push(doneTasks[i]);
     }
     var sortedCats = Object.keys(catGroups).sort();
     for (var ci = 0; ci < sortedCats.length; ci++) {
       var c = sortedCats[ci];
-      html += '<div class="tg">';
       var cc = c === "私人事务" ? "#ec64a6" : "#6c8cff";
-      html += '<div class="tldate" style="color:' + cc + '">' + c + ' <span style="font-size:10px;color:#9ca3b8;font-weight:400">(' + catGroups[c].length + ')</span></div>';
-      catGroups[c].sort(function(a,b){ return (b.d||"0") < (a.d||"0") ? -1 : (b.d||"0") > (a.d||"0") ? 1 : 0; });
-      for (var ji = 0; ji < catGroups[c].length; ji++) {
-        html += makeCard(catGroups[c][ji]);
+      var innerGroups = catGroups[c];
+      var gnames = Object.keys(innerGroups).sort();
+      for (var gi = 0; gi < gnames.length; gi++) {
+        var gn = gnames[gi];
+        html += '<div class="tg">';
+        html += '<div class="tldate" style="color:' + cc + '">' + c + ' · ' + gn + ' <span style="font-size:10px;color:#9ca3b8;font-weight:400">(' + innerGroups[gn].length + ')</span></div>';
+        innerGroups[gn].sort(function(a,b){ return (b.d||"0") < (a.d||"0") ? -1 : (b.d||"0") > (a.d||"0") ? 1 : 0; });
+        for (var ji = 0; ji < innerGroups[gn].length; ji++) {
+          html += makeCard(innerGroups[gn][ji]);
+        }
+        html += '</div>';
       }
-      html += '</div>';
     }
   }
 
   document.getElementById("donebox").innerHTML = html;
 }
 
-// Render all tasks overview by category
+// Render all tasks overview by category (with group sub-division)
 function renderOverview(data) {
   var cats = {};
   for (var i = 0; i < data.length; i++) {
     var c = data[i].c;
-    if (!cats[c]) cats[c] = { todo: [], progress: [], wait: [], done: [], subtask: 0, subtaskDone: 0, total: 0, doneCount: 0 };
-    var g = cats[c];
-    g.total++;
-    if (data[i].s === "已完成") { g.done.push(data[i]); g.doneCount++; }
-    else if (data[i].s === "进行中") g.progress.push(data[i]);
-    else if (data[i].s === "等待") g.wait.push(data[i]);
-    else g.todo.push(data[i]);
+    if (!cats[c]) cats[c] = { groups: {}, total: 0, doneCount: 0, subtask: 0, subtaskDone: 0 };
+    var cat = cats[c];
+    cat.total++;
+    if (data[i].s === "已完成") cat.doneCount++;
+    // Group by g field
+    var gname = data[i].g || "其他";
+    if (!cat.groups[gname]) cat.groups[gname] = { todo: [], progress: [], wait: [], done: [] };
+    var gp = cat.groups[gname];
+    if (data[i].s === "已完成") gp.done.push(data[i]);
+    else if (data[i].s === "进行中") gp.progress.push(data[i]);
+    else if (data[i].s === "等待") gp.wait.push(data[i]);
+    else gp.todo.push(data[i]);
     // Count subtask progress
     if (data[i].st) {
-      g.subtask += data[i].st.length;
+      cat.subtask += data[i].st.length;
       for (var si = 0; si < data[i].st.length; si++) {
-        if (data[i].st[si].s === "已完成") g.subtaskDone++;
+        if (data[i].st[si].s === "已完成") cat.subtaskDone++;
       }
     }
   }
+
+  var sortP = function(x){return pOrd[x.p] || 2;};
 
   var catOrder = Object.keys(cats).sort(function(a,b){
     var aActive = cats[a].total - cats[a].doneCount;
@@ -1160,59 +1213,76 @@ function renderOverview(data) {
   var html = '';
   for (var ci = 0; ci < catOrder.length; ci++) {
     var c = catOrder[ci];
-    var g = cats[c];
-    var pct = g.total > 0 ? Math.round(g.doneCount / g.total * 100) : 0;
+    var cat = cats[c];
+    var pct = cat.total > 0 ? Math.round(cat.doneCount / cat.total * 100) : 0;
     var barClr = pct === 100 ? '#2ed573' : (pct > 50 ? '#ff9f43' : '#ff4d6a');
 
     html += '<div style="background:#1a1d28;border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid #2a2e3f">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
     html += '<h3 style="font-size:15px;font-weight:700;color:#e8eaf0">' + c + '</h3>';
-    html += '<span style="font-size:12px;color:#9ca3b8">' + g.doneCount + '/' + g.total + ' (' + pct + '%)</span>';
+    html += '<span style="font-size:12px;color:#9ca3b8">' + cat.doneCount + '/' + cat.total + ' (' + pct + '%)</span>';
     html += '</div>';
     html += '<div class="pb" style="margin-bottom:10px;height:5px"><div class="pf" style="width:' + pct + '%;background:' + barClr + ';height:5px;border-radius:3px"></div></div>';
 
-    // Pending tasks (todo + progress + wait)
-    var pending = g.todo.concat(g.progress).concat(g.wait);
-    var sortP = function(x){return pOrd[x.p] || 2;};
-    pending.sort(function(a,b){
-      var pa = sortP(a), pb = sortP(b);
-      if (pa !== pb) return pa - pb;
-      return (a.d||"99") < (b.d||"99") ? -1 : 1;
+    // Sort groups: by number of active (non-done) tasks descending
+    var groupNames = Object.keys(cat.groups).sort(function(a,b){
+      var aAct = cat.groups[a].todo.length + cat.groups[a].progress.length + cat.groups[a].wait.length;
+      var bAct = cat.groups[b].todo.length + cat.groups[b].progress.length + cat.groups[b].wait.length;
+      if (aAct !== bAct) return bAct - aAct;
+      return a < b ? -1 : 1;
     });
 
-    if (pending.length > 0) {
-      html += '<div style="margin-bottom:6px"><span style="font-size:10px;font-weight:700;color:#ff9f43;letter-spacing:1px">待处理 ' + pending.length + '</span></div>';
-      for (var pi = 0; pi < pending.length; pi++) {
-        var t = pending[pi];
-        var pc = pCls[t.p] || "bm";
-        var stText = '';
-        if (t.st) {
-          var sd = 0; for (var si = 0; si < t.st.length; si++) { if (t.st[si].s === '已完成') sd++; }
-          stText = ' <span style="font-size:9px;color:#5a6078">' + sd + '/' + t.st.length + '</span>';
-        }
-        html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid #232738;font-size:12px;color:#c4c9d4">';
-        html += '<span class="bg ' + pc + '" style="font-size:9px">' + t.p + '</span>';
-        html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + t.t + stText + '</span>';
-        html += '<span style="font-size:10px;color:#5a6078">' + (t.d||'') + '</span>';
-        html += '</div>';
-      }
-    }
+    for (var gi = 0; gi < groupNames.length; gi++) {
+      var gn = groupNames[gi];
+      var gp = cat.groups[gn];
 
-    // Completed
-    if (g.done.length > 0) {
-      html += '<div style="margin-top:8px;margin-bottom:4px">';
-      html += '<span style="font-size:10px;font-weight:700;color:#2ed573;letter-spacing:1px;cursor:pointer" onclick="var el=this.parentNode.nextElementSibling;el.style.display=el.style.display==\'none\'?\'block\':\'none\'">&#9654; 已完成 ' + g.done.length + '</span></div>';
-      html += '<div style="display:none">';
-      g.done.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
-      for (var di = 0; di < g.done.length; di++) {
-        var t = g.done[di];
-        html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;color:#778ca3">';
-        html += '<span style="color:#2ed573;font-size:10px">&#10003;</span>';
-        html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:line-through">' + t.t + '</span>';
-        html += '<span style="font-size:9px;color:#5a6078">' + (t.d||'') + '</span>';
+      // Pending tasks (todo + progress + wait)
+      var pending = gp.todo.concat(gp.progress).concat(gp.wait);
+      if (pending.length === 0 && gp.done.length === 0) continue;
+
+      // Group header
+      html += '<div style="margin:8px 0 4px 0;padding:3px 6px;background:rgba(108,140,255,.08);border-radius:4px;font-size:11px;font-weight:700;color:#6c8cff;letter-spacing:0.5px">';
+      html += gn;
+      html += ' <span style="font-weight:400;color:#5a6078;font-size:10px">(' + pending.length + '待处理 / ' + gp.done.length + '完成)</span></div>';
+
+      if (pending.length > 0) {
+        pending.sort(function(a,b){
+          var pa = sortP(a), pb = sortP(b);
+          if (pa !== pb) return pa - pb;
+          return (a.d||"99") < (b.d||"99") ? -1 : 1;
+        });
+        for (var pi = 0; pi < pending.length; pi++) {
+          var t = pending[pi];
+          var pc = pCls[t.p] || "bm";
+          var stText = '';
+          if (t.st) {
+            var sd = 0; for (var si = 0; si < t.st.length; si++) { if (t.st[si].s === '已完成') sd++; }
+            stText = ' <span style="font-size:9px;color:#5a6078">' + sd + '/' + t.st.length + '</span>';
+          }
+          html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid #232738;font-size:12px;color:#c4c9d4">';
+          html += '<span class="bg ' + pc + '" style="font-size:9px">' + t.p + '</span>';
+          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + t.t + stText + '</span>';
+          html += '<span style="font-size:10px;color:#5a6078">' + (t.d||'') + '</span>';
+          html += '</div>';
+        }
+      }
+
+      // Completed in this group
+      if (gp.done.length > 0) {
+        html += '<div style="margin-top:4px">';
+        html += '<span style="font-size:10px;font-weight:700;color:#2ed573;letter-spacing:1px;cursor:pointer" onclick="var el=this.parentNode.nextElementSibling;el.style.display=el.style.display==\'none\'?\'block\':\'none\'">&#9654; 已完成 ' + gp.done.length + '</span></div>';
+        html += '<div style="display:none">';
+        gp.done.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
+        for (var di = 0; di < gp.done.length; di++) {
+          var t = gp.done[di];
+          html += '<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:11px;color:#778ca3">';
+          html += '<span style="color:#2ed573;font-size:10px">&#10003;</span>';
+          html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:line-through">' + t.t + '</span>';
+          html += '<span style="font-size:9px;color:#5a6078">' + (t.d||'') + '</span>';
+          html += '</div>';
+        }
         html += '</div>';
       }
-      html += '</div>';
     }
 
     html += '</div>';
@@ -1820,11 +1890,29 @@ function openDetail(id) {
     stModalHtml += '</div></div>';
   }
 
+  // Progress updates in modal (collapsible)
+  var upHtml = '';
+  if (x.updates && x.updates.length > 0) {
+    upHtml += '<div class="fl">';
+    upHtml += '<label style="cursor:pointer" onclick="var el=document.getElementById(\'upd-' + x.id + '\');el.style.display=el.style.display==\'none\'?\'block\':\'none\';this.querySelector(\'.arr\').classList.toggle(\'open\')">';
+    upHtml += '<span class="arr open">&#9660;</span> 📋 进度记录 (' + x.updates.length + '条)</label>';
+    upHtml += '<div class="vl" id="upd-' + x.id + '" style="display:block">';
+    for (var ui = 0; ui < x.updates.length; ui++) {
+      var u = x.updates[ui];
+      upHtml += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #232738;font-size:12px;color:#c4c9d4">';
+      upHtml += '<span style="color:#6c8cff;font-weight:600;white-space:nowrap;font-size:11px;min-width:72px">📅 ' + u.d + '</span>';
+      upHtml += '<span>' + u.t + '</span>';
+      upHtml += '</div>';
+    }
+    upHtml += '</div></div>';
+  }
+
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
+      (x.g ? '<div><label>分组</label><div class="vl"><span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span></div></div>' : '') +
       '<div><label>优先级</label><div class="vl"><span class="bg ' + pc + '">' + x.p + '</span></div></div>' +
       '<div><label>状态</label><div class="vl" style="font-weight:700;color:' + sc + '">' + x.s + '</div></div>' +
       '<div><label>截止日期</label><div class="vl">&#128197; ' + x.d + '</div></div>' +

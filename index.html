@@ -2091,20 +2091,33 @@ function renderOverview(data) {
   var html = '<div class="ov-grid">';
   for (var ci = 0; ci < cats.length; ci++) {
     var g = groups[cats[ci]];
-    var pct = g.total > 0 ? Math.round(g.done / g.total * 100) : 0;
+    // Exclude cancelled tasks from counts
+    var activeTasks = [], cancelledTasks = [];
+    for (var ti = 0; ti < g.tasks.length; ti++) {
+      if (g.tasks[ti].s === '已取消') cancelledTasks.push(g.tasks[ti]);
+      else activeTasks.push(g.tasks[ti]);
+    }
+    var activeTotal = activeTasks.length;
+    var activeDone = 0;
+    for (var ti = 0; ti < activeTotal; ti++) { if (activeTasks[ti].s === '已完成') activeDone++; }
+    var pct = activeTotal > 0 ? Math.round(activeDone / activeTotal * 100) : 0;
     var barColor = pct === 100 ? "#2ed573" : pct > 50 ? "#ff9f43" : "#ff4d6a";
     html += '<div class="ov-card">' +
       '<h3>' + cats[ci] + '</h3>' +
-      '<div class="ov-num" style="color:' + barColor + '">' + g.done + '/' + g.total + '</div>' +
+      '<div class="ov-num" style="color:' + barColor + '">' + activeDone + '/' + activeTotal + '</div>' +
       '<div class="ov-progress"><div class="ov-bar" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
       '<div class="ov-stat-row"><span class="ov-label">完成率</span><span>' + pct + '%</span></div>';
     // List task names
     html += '<div style="margin-top:6px">';
-    for (var ti = 0; ti < g.tasks.length; ti++) {
-      var t = g.tasks[ti];
+    for (var ti = 0; ti < activeTasks.length; ti++) {
+      var t = activeTasks[ti];
       var ic = t.s === "已完成" ? "&#9989;" : (t.s === "等待" ? "&#9203;" : (t.p === "紧急" ? "&#128308;" : "&#128309;"));
       html += '<div style="font-size:10px;color:#9ca3b8;padding:1px 0;display:flex;gap:4px;align-items:center">' +
         '<span>' + ic + '</span><span' + (t.s === "已完成" ? ' style="text-decoration:line-through;color:#5a6078"' : '') + '>' + t.t.slice(0,25) + '</span></div>';
+    }
+    for (var ti = 0; ti < cancelledTasks.length; ti++) {
+      html += '<div style="font-size:10px;color:#5a6078;padding:1px 0;display:flex;gap:4px;align-items:center">' +
+        '<span>&#10062;</span><span style="text-decoration:line-through;color:#5a6078">' + cancelledTasks[ti].t.slice(0,25) + '</span></div>';
     }
     html += '</div></div>';
   }

@@ -333,7 +333,7 @@ body.batch-mode .tt{padding-right:30px}
 
 <div class="ft">
   手动完成任务后点击「同步变更」按钮 → 粘贴给 Claw 即可同步到记忆<br>
-  <span id="updateTime"></span> <span id="dataAge" style="font-size:10px;color:#5a6078"></span>
+  <span id="updateTime"></span> <span id="deployStatus" style="font-size:10px;color:#5a6078"></span> <span id="dataAge" style="font-size:10px;color:#5a6078"></span>
 </div>
 
 <script>
@@ -758,12 +758,47 @@ var pOrd = {"紧急":0,"高":1,"中":2,"低":3};
 // ===== FETCH DATA =====
 // Weekly summaries data
 var weeklySummaries = null;
+var fetchRetries = 0;
+var MAX_RETRIES = 3;
+
+function checkDeployStatus(callback) {
+  // Check if the deployed data.json matches our expected version
+  // by fetching a lightweight status check
+  var chk = new XMLHttpRequest();
+  chk.open("GET", "data.json?t=" + Date.now(), true);
+  chk.timeout = 5000;
+  chk.onload = function() {
+    if (chk.status === 200) {
+      try {
+        var data = JSON.parse(chk.responseText);
+        // Check the latest task - this is our deployment marker
+        var latestId = 0;
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].id > latestId) latestId = data[i].id;
+        }
+        callback(true, latestId, data);
+      } catch(e) {
+        callback(false, 0, null);
+      }
+    } else {
+      callback(false, 0, null);
+    }
+  };
+  chk.onerror = function() { callback(false, 0, null); };
+  chk.ontimeout = function() { callback(false, 0, null); };
+  chk.send();
+}
 
 function fetchData(callback) {
-  var url = "data.json?t=" + Date.now();
+  fetchRetries = 0;
+  fetchWithRetry(callback);
+}
+
+function fetchWithRetry(callback) {
+  var url = "data.json?v=" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
-  xhr.timeout = 10000;
+  xhr.timeout = 8000;
   xhr.onload = function() {
     if (xhr.status === 200) {
       try {
@@ -792,14 +827,26 @@ function fetchData(callback) {
     }
   };
   xhr.onerror = function() {
-    document.getElementById("syncStatus").textContent = "网络错误，请刷新重试";
-    document.getElementById("syncStatus").className = "sync-badge err";
-    hideLoading();
+    fetchRetries++;
+    if (fetchRetries < MAX_RETRIES) {
+      document.getElementById("syncStatus").textContent = "重试中 (" + fetchRetries + "/" + MAX_RETRIES + ")...";
+      setTimeout(function(){ fetchWithRetry(callback); }, 2000 * fetchRetries);
+    } else {
+      document.getElementById("syncStatus").textContent = "网络错误，请刷新重试";
+      document.getElementById("syncStatus").className = "sync-badge err";
+      hideLoading();
+    }
   };
   xhr.ontimeout = function() {
-    document.getElementById("syncStatus").textContent = "请求超时，请刷新重试";
-    document.getElementById("syncStatus").className = "sync-badge err";
-    hideLoading();
+    fetchRetries++;
+    if (fetchRetries < MAX_RETRIES) {
+      document.getElementById("syncStatus").textContent = "超时重试 (" + fetchRetries + "/" + MAX_RETRIES + ")...";
+      setTimeout(function(){ fetchWithRetry(callback); }, 2000 * fetchRetries);
+    } else {
+      document.getElementById("syncStatus").textContent = "请求超时，请刷新重试";
+      document.getElementById("syncStatus").className = "sync-badge err";
+      hideLoading();
+    }
   };
   xhr.send();
 }

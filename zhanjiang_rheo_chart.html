@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>湛江海水配液流变曲线</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0f1119;color:#e8eaf0;padding:20px}
+h1{font-size:18px;margin-bottom:4px;color:#e8eaf0}
+.sub{font-size:12px;color:#9ca3b8;margin-bottom:20px}
+.chart-wrap{background:#1a1d28;border-radius:12px;padding:20px;border:1px solid #2a2e3f;margin-bottom:16px}
+.legend{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:12px}
+.legend-item{display:flex;align-items:center;gap:6px;color:#c4c9d4}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:20px}
+.stat-card{background:#232738;border-radius:8px;padding:12px 16px;flex:1;min-width:120px}
+.stat-card .num{font-size:20px;font-weight:700;color:#e8eaf0}
+.stat-card .lbl{font-size:11px;color:#9ca3b8;margin-top:2px}
+canvas{width:100%!important;max-height:420px}
+</style>
+</head>
+<body>
+
+<h1>📊 湛江海水配液 · 流变测试曲线</h1>
+<div class="sub">Thermo Fisher 流变仪 | 恒剪切升温 | 配方: b6-60</div>
+
+<div class="chart-wrap">
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:#6c8cff"></span>粘度 (mPas)</div>
+    <div class="legend-item"><span class="dot" style="background:#ff6b6b"></span>温度 (°C)</div>
+    <div class="legend-item"><span class="dot" style="background:#2ed573"></span>剪切速率 (1/s)</div>
+  </div>
+  <canvas id="mainChart"></canvas>
+</div>
+
+<div class="stats" id="statsArea"></div>
+
+<script>
+fetch('rheo_data.json')
+  .then(r => r.json())
+  .then(data => {
+    // Sample to ~400 points for chart smoothness
+    const step = Math.max(1, Math.floor(data.length / 400));
+    const sampled = data.filter((_, i) => i % step === 0);
+
+    const labels = sampled.map(d => d.t.toFixed(1) + 'min');
+    const temps = sampled.map(d => d.temp);
+    const etas = sampled.map(d => d.eta);
+    const gps = sampled.map(d => d.gp);
+
+    new Chart(document.getElementById('mainChart'), {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '粘度 (mPas)',
+          data: etas,
+          borderColor: '#6c8cff',
+          backgroundColor: 'rgba(108,140,255,.12)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2,
+          yAxisID: 'y'
+        }, {
+          label: '温度 (°C)',
+          data: temps,
+          borderColor: '#ff6b6b',
+          backgroundColor: 'rgba(255,107,107,.08)',
+          fill: false,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 1.5,
+          borderDash: [5,3],
+          yAxisID: 'y1'
+        }, {
+          label: '剪切速率 (1/s)',
+          data: gps,
+          borderColor: '#2ed573',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 0,
+          borderWidth: 1,
+          borderDash: [2,4],
+          yAxisID: 'y2'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {mode:'index',intersect:false},
+        plugins: {
+          legend: {display:false},
+          tooltip: {
+            backgroundColor: '#1a1d28',
+            titleColor: '#e8eaf0',
+            bodyColor: '#c4c9d4',
+            borderColor: '#2a2e3f',
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              title: function(items) {
+                const idx = items[0].dataIndex;
+                const d = sampled[idx];
+                return '时间: ' + d.t.toFixed(2) + ' min';
+              },
+              label: function(ctx) {
+                const idx = ctx.dataIndex;
+                const d = sampled[idx];
+                if (ctx.dataset.label.includes('粘度')) return '粘度: ' + d.eta.toFixed(1) + ' mPas';
+                if (ctx.dataset.label.includes('温度')) return '温度: ' + d.temp.toFixed(1) + ' °C';
+                return '剪切: ' + d.gp.toFixed(1) + ' 1/s';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            display: false,
+            grid: {color:'rgba(255,255,255,.04)'}
+          },
+          y: {
+            type: 'linear',
+            position: 'left',
+            title: {display:true, text:'粘度 (mPas)', color:'#6c8cff', font:{size:11}},
+            grid: {color:'rgba(255,255,255,.05)'},
+            ticks: {color:'#9ca3b8', font:{size:10}}
+          },
+          y1: {
+            type: 'linear',
+            position: 'right',
+            title: {display:true, text:'温度 (°C)', color:'#ff6b6b', font:{size:11}},
+            grid: {drawOnChartArea:false},
+            ticks: {color:'#9ca3b8', font:{size:10}}
+          },
+          y2: {
+            type: 'linear',
+            position: 'right',
+            display: false,
+            grid: {drawOnChartArea:false},
+            ticks: {display:false}
+          }
+        }
+      }
+    });
+
+    // Stats
+    const minEta = Math.min(...etas);
+    const maxEta = Math.max(...etas);
+    const minTemp = Math.min(...temps);
+    const maxTemp = Math.max(...temps);
+    const dropPct = ((maxEta - minEta) / maxEta * 100).toFixed(1);
+
+    document.getElementById('statsArea').innerHTML = `
+      <div class="stat-card"><div class="num">${minEta.toFixed(0)}</div><div class="lbl">最低粘度 (mPas)</div></div>
+      <div class="stat-card"><div class="num">${maxEta.toFixed(0)}</div><div class="lbl">最高粘度 (mPas)</div></div>
+      <div class="stat-card"><div class="num">${dropPct}%</div><div class="lbl">粘度降幅</div></div>
+      <div class="stat-card"><div class="num">${minTemp.toFixed(1)}→${maxTemp.toFixed(1)}°C</div><div class="lbl">温度区间</div></div>
+    `;
+  });
+</script>
+
+</body>
+</html>

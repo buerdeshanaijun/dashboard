@@ -191,6 +191,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .tc.overdue{border-color:rgba(255,77,106,.5)!important;box-shadow:0 0 0 1px rgba(255,77,106,.25),inset 0 0 0 1px rgba(255,77,106,.08)!important}
 .tc.overdue .tt::after{content:' ⚠️';font-size:9px;color:#ff4d6a;font-weight:400;margin-left:4px}
 .card-update{font-size:9.5px;color:#6c8cff;margin-top:4px;padding:3px 6px;background:rgba(108,140,255,.08);border-radius:4px;display:flex;align-items:center;gap:4px;line-height:1.35}
+.ud-tag{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.ud-tag.plan{background:rgba(108,140,255,.2);color:#6c8cff}
+.ud-tag.done{background:rgba(46,213,115,.2);color:#2ed573}
+.ud-tag.travel{background:rgba(255,159,67,.2);color:#ff9f43}
+.ud-tag.meeting{background:rgba(165,94,234,.2);color:#a55eea}
+.ud-tag.lab{background:rgba(0,206,209,.2);color:#00ced1}
+.ud-tag.progress{background:rgba(255,217,61,.2);color:#ffd93d}
+.ud-tag.cancel{background:rgba(255,77,106,.2);color:#ff4d6a}
+.ud-tag.update{background:rgba(120,140,160,.2);color:#9ca3b8}
 .card-update .ud-date{color:#9ca3b8;font-size:8.5px;white-space:nowrap;flex-shrink:0}
 .card-ts{font-size:8.5px;color:#5a6078;margin-top:3px;text-align:right}
 .hl{background:rgba(255,217,61,.35);color:#ffd93d;border-radius:2px;padding:0 1px}
@@ -879,11 +888,19 @@ function highlightText(text, query) {
   return text.replace(new RegExp('(' + q + ')', 'gi'), '<span class="hl">$1</span>');
 }
 
+// Tag icons and labels
+var TAG_MAP = {
+  'plan': '📅', 'done': '✅', 'travel': '🚗', 'meeting': '📋',
+  'lab': '🧪', 'progress': '⏳', 'cancel': '❌', 'update': '🔄'
+};
+function tagIcon(t) { return TAG_MAP[t] || '📌'; }
+function tagLabel(t) { return t || 'update'; }
+
 // Get latest update from task
 function lastUpdate(x) {
   if (x.updates && x.updates.length > 0) {
     var u = x.updates[x.updates.length - 1];
-    return { date: u.d, text: u.t };
+    return { date: u.d, text: u.t, tag: u.tag || 'update' };
   }
   return null;
 }
@@ -936,7 +953,9 @@ function makeCard(x) {
   var updateHtml = '';
   var lu = lastUpdate(x);
   if (lu) {
-    updateHtml = '<div class="card-update"><span class="ud-date">' + lu.date + '</span>' + (sq ? highlightText(lu.text, sq) : lu.text) + '</div>';
+    var tagCls = tagLabel(lu.tag);
+    var tagI = tagIcon(lu.tag);
+    updateHtml = '<div class="card-update"><span class="ud-tag ' + tagCls + '">' + tagI + ' ' + tagLabel(lu.tag) + '</span><span class="ud-date">' + lu.date + '</span>' + (sq ? highlightText(lu.text, sq) : lu.text) + '</div>';
   }
 
   // Last update timestamp
@@ -2023,6 +2042,9 @@ function openDetail(id) {
     for (var ui = 0; ui < x.updates.length; ui++) {
       var u = x.updates[ui];
       upHtml += '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #232738;font-size:12px;color:#c4c9d4">';
+      var uTag = u.tag || 'update';
+      var uTagI = tagIcon(uTag);
+      upHtml += '<span class="ud-tag ' + uTag + '" style="flex-shrink:0;margin-top:1px">' + uTagI + ' ' + tagLabel(uTag) + '</span>';
       upHtml += '<span style="color:#6c8cff;font-weight:600;white-space:nowrap;font-size:11px;min-width:72px">📅 ' + u.d + '</span>';
       upHtml += '<span>' + u.t + '</span>';
       upHtml += '</div>';

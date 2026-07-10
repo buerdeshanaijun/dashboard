@@ -201,6 +201,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .ud-tag.cancel{background:rgba(255,77,106,.2);color:#ff4d6a}
 .ud-tag.update{background:rgba(120,140,160,.2);color:#9ca3b8}
 .card-update .ud-date{color:#9ca3b8;font-size:8.5px;white-space:nowrap;flex-shrink:0}
+/* Add task modal */
+.add-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(46,213,115,.13);color:#2ed573;border:1px solid rgba(46,213,115,.28);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.add-btn:active{background:rgba(46,213,115,.25)}
+.fl input,.fl textarea,.fl select{width:100%;padding:8px 10px;background:#0f1117;border:1px solid #2a2e3f;border-radius:8px;color:#e8eaf0;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.fl input:focus,.fl textarea:focus,.fl select:focus{border-color:#6c8cff}
+.fl textarea{resize:vertical;min-height:60px}
+.fl select option{background:#1a1d28;color:#e8eaf0}
+.fl .form-row{display:flex;gap:10px;flex-wrap:wrap}
+.fl .form-row > div{flex:1;min-width:100px}
+.form-actions{display:flex;gap:10px;margin-top:16px}
+.form-actions button{flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit}
+.form-actions .btn-primary{background:#2ed573;color:#0f1117}
+.form-actions .btn-cancel{background:#3a3f55;color:#9ca3b8}
+.form-actions .btn-primary:active{background:#26b863}
+/* Delete button on cards */
+.tc-del{position:absolute;top:10px;right:42px;width:24px;height:24px;border-radius:50%;background:transparent;border:none;color:#5a6078;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:5;line-height:1;padding:0;opacity:0}
+.tc:hover .tc-del{opacity:1}
+.tc-del:hover{background:rgba(255,77,106,.2);color:#ff4d6a}
+/* Subtask clickable */
+.st-item{cursor:pointer}
+.st-item:active{background:rgba(255,255,255,.06)!important}
 .card-ts{font-size:8.5px;color:#5a6078;margin-top:3px;text-align:right}
 .hl{background:rgba(255,217,61,.35);color:#ffd93d;border-radius:2px;padding:0 1px}
 .ov-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
@@ -253,6 +274,7 @@ body.batch-mode .tt{padding-right:30px}
     <span class="notif-badge" id="notifBtn" onclick="requestNotify()">&#128276; 通知</span>
     <span class="refresh-btn" onclick="exportCSV()" title="导出任务为CSV文件">&#128229; 导出CSV</span>
     <span class="sync-clear-btn" id="batchModeBtn" onclick="toggleBatchMode()" title="批量操作模式">&#128203; 批量</span>
+    <span class="add-btn" onclick="showAddTaskMo()">&#10133; 新建</span>
   </div>
 </div>
 
@@ -329,10 +351,29 @@ body.batch-mode .tt{padding-right:30px}
 </div>
 
 <div class="mo" id="detailMo" onclick="if(event.target===this)closeMo()"><div class="md" id="detailMd" onclick="event.stopPropagation()"></div></div>
+<div class="mo" id="addTaskMo" onclick="if(event.target===this)closeAddMo()"><div class="md" id="addTaskMd" onclick="event.stopPropagation()">
+  <h2>&#10133; 新建任务</h2>
+  <div class="fl"><label>任务标题 *</label><input type="text" id="at-title" placeholder="输入任务名称" autocomplete="off"></div>
+  <div class="fl"><label>详细描述</label><textarea id="at-ds" placeholder="输入任务描述"></textarea></div>
+  <div class="fl"><div class="form-row">
+    <div><label>优先级</label><select id="at-p"><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option><option value="紧急">紧急</option></select></div>
+    <div><label>状态</label><select id="at-s"><option value="待办" selected>待办</option><option value="进行中">进行中</option></select></div>
+    <div><label>截止日期</label><input type="date" id="at-d"></div>
+  </div></div>
+  <div class="fl"><div class="form-row">
+    <div><label>分组</label><select id="at-g"><option value="">无</option></select></div>
+    <div><label>类别</label><select id="at-c"><option value="">选择类别</option></select></div>
+  </div></div>
+  <div class="form-actions">
+    <button class="btn-primary" onclick="submitAddTask()">&#10133; 创建</button>
+    <button class="btn-cancel" onclick="closeAddMo()">取消</button>
+  </div>
+</div></div>
 <div class="toast" id="toast"></div>
 
 <div class="ft">
-  手动完成任务后点击「同步变更」按钮 → 粘贴给 Claw 即可同步到记忆<br>
+  ✅ 新增功能：点击任务卡片的 ✕ 可删除，点击子任务圆点可切换状态（待办→进行中→已完成），点击「➕ 新建」添加新任务<br>
+  所有变更保存到本地，点击「同步变更」→ 粘贴到对话框给 Claw（Hermes助手）即可同步到仪表盘<br>
   <span id="updateTime"></span> <span id="deployStatus" style="font-size:10px;color:#5a6078"></span> <span id="dataAge" style="font-size:10px;color:#5a6078"></span>
 </div>
 
@@ -372,18 +413,35 @@ function saveLocalChanges(changes) {
 function getMergedTasks() {
   var base = TASKS;
   var changes = loadLocalChanges();
+
+  // 1. Load new tasks
+  var newTasks = loadNewTasks();
+
+  // 2. Merge status changes and filter deleted
   var merged = [];
   for (var i = 0; i < base.length; i++) {
     var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st, g:base[i].g, updates:base[i].updates};
     var cid = String(task.id);
+    // Skip deleted
+    if (changes[cid] && changes[cid]._deleted) continue;
     if (changes[cid]) {
       var ch = changes[cid];
       if (ch.s) task.s = ch.s;
       if (ch.pg !== undefined) task.pg = ch.pg;
+      // Apply subtask changes
+      if (ch.st) task.st = ch.st;
       task._local = true;
     }
     merged.push(task);
   }
+
+  // 3. Add new tasks
+  for (var ni = 0; ni < newTasks.length; ni++) {
+    var nt = newTasks[ni];
+    nt._local = true;
+    merged.push(nt);
+  }
+
   return merged;
 }
 
@@ -438,35 +496,92 @@ function toggleComplete(taskId) {
 
 function exportChanges() {
   var changes = loadLocalChanges();
-  var count = Object.keys(changes).length;
-  if (count === 0) {
+  var newTasks = loadNewTasks();
+  var statusCount = 0, delCount = 0, subCount = 0;
+
+  // Count change types
+  for (var key in changes) {
+    var ch = changes[key];
+    if (ch._deleted) delCount++;
+    else if (ch.st) subCount++;
+    else statusCount++;
+  }
+  var addCount = newTasks.length;
+  var total = statusCount + delCount + subCount + addCount;
+
+  if (total === 0) {
     showToast("没有待同步的变更");
     return;
   }
 
-  // Build a human-readable summary + machine-readable JSON
   var merged = getMergedTasks();
   var summary = [];
   var ids = Object.keys(changes);
+
+  // Status changes
   for (var i = 0; i < ids.length; i++) {
+    var ch = changes[ids[i]];
+    if (ch._deleted || ch.st) continue;
+    var tid = parseInt(ids[i]);
     var t = null;
     for (var j = 0; j < merged.length; j++) {
-      if (String(merged[j].id) === ids[i]) { t = merged[j]; break; }
+      if (merged[j].id === tid) { t = merged[j]; break; }
     }
-    if (t) summary.push("- " + t.t + " → " + t.s);
+    if (t) summary.push("- ID " + ids[i] + ": " + t.t + " → " + ch.s);
   }
 
-  var exportText = "请同步以下任务变更:\n" + summary.join("\n") + "\n\n---JSON---\n" + JSON.stringify(changes, null, 2);
+  // Subtask changes
+  for (var i = 0; i < ids.length; i++) {
+    var ch = changes[ids[i]];
+    if (!ch.st) continue;
+    var tid = parseInt(ids[i]);
+    for (var j = 0; j < merged.length; j++) {
+      if (merged[j].id === tid) {
+        summary.push("- ID " + ids[i] + " " + merged[j].t + " 子任务更新:");
+        for (var si = 0; si < ch.st.length; si++) {
+          var st = ch.st[si];
+          var origSt = null;
+          if (TASKS[j] && TASKS[j].st) origSt = TASKS[j].st[si];
+          if (!origSt || origSt.s !== st.s) {
+            summary.push("   - " + st.t + " → " + st.s);
+          }
+        }
+        break;
+      }
+    }
+  }
 
-  // Try clipboard API
+  // Deleted
+  for (var i = 0; i < ids.length; i++) {
+    var ch = changes[ids[i]];
+    if (!ch._deleted) continue;
+    var tid = parseInt(ids[i]);
+    for (var j = 0; j < TASKS.length; j++) {
+      if (TASKS[j].id === tid) {
+        summary.push("- ID " + ids[i] + ": " + TASKS[j].t + " [已删除]");
+        break;
+      }
+    }
+  }
+
+  // New tasks
+  for (var ni = 0; ni < newTasks.length; ni++) {
+    var nt = newTasks[ni];
+    summary.push("- [新] ID " + nt.id + ": " + nt.t + " (" + nt.s + ", " + nt.p + ")");
+  }
+
+  var exportText = "=== 仪表盘同步 ===\n\n" + summary.join("\n") +
+    "\n\n---JSON---\n" + JSON.stringify({changes: changes, newTasks: newTasks}, null, 2);
+
+  // Try clipboard
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(exportText).then(function() {
-      showToast("已复制 " + count + " 条变更到剪贴板，粘贴给Claw即可同步!");
+      showToast("已复制 " + total + " 条变更到剪贴板！粘贴到对话框给我即可同步");
     }).catch(function() {
-      promptCopy(exportText, count);
+      promptCopy(exportText, total);
     });
   } else {
-    promptCopy(exportText, count);
+    promptCopy(exportText, total);
   }
 }
 
@@ -1008,7 +1123,7 @@ function makeCard(x) {
       var sk = x.st[si];
       var sDot = sk.s === '已完成' ? 'done' : (sk.s === '进行中' ? 'progress' : 'todo');
       var sDone = sk.s === '已完成' ? ' done' : '';
-      stHtml += '<div class="st-item' + sDone + '">';
+      stHtml += '<div class="st-item' + sDone + '" onclick="event.stopPropagation();toggleSubtask(' + x.id + ',' + si + ')">';
       stHtml += '<span class="st-dot ' + sDot + '"></span>';
       stHtml += '<span>' + sk.t + '</span>';
       if (sk.d) stHtml += '<span class="st-date">' + sk.d + '</span>';
@@ -1021,6 +1136,7 @@ function makeCard(x) {
 
   return '<div class="tc' + (done ? ' done' : '') + overdueCls + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')">' +
     selectHtml +
+    '<button class="tc-del" onclick="event.stopPropagation();deleteTask(' + x.id + ')" title="删除任务">&#10005;</button>' +
     '<button class="tc-toggle' + toggleCls + '" onclick="event.stopPropagation();toggleComplete(' + x.id + ')" title="' + (done ? '点击恢复待办' : '点击标记完成') + '">' + (done ? '✓' : '') + '</button>' +
     '<div class="tt">' + cardTitle + localBadge + '</div>' +
     dsHtml +
@@ -2047,12 +2163,12 @@ function openDetail(id) {
   // Subtask list in modal
   var stModalHtml = '';
   if (x.st && x.st.length > 0) {
-    stModalHtml += '<div class="fl"><label>子任务 (' + x.st.length + '项)</label><div class="vl">';
+    stModalHtml += '<div class="fl"><label>子任务 (' + x.st.length + '项) <span style="font-size:9px;color:#5a6078;font-weight:400">点击切换状态</span></label><div class="vl">';
     for (var si = 0; si < x.st.length; si++) {
       var sk = x.st[si];
       var sIcon = sk.s === '已完成' ? '&#9989;' : (sk.s === '进行中' ? '&#128260;' : '&#9203;');
       var sClr = sk.s === '已完成' ? '#2ed573' : (sk.s === '进行中' ? '#ff9f43' : '#778ca3');
-      stModalHtml += '<span class="ds-bullet" style="color:' + sClr + '">' + sIcon + ' ' + sk.t;
+      stModalHtml += '<span class="ds-bullet" style="color:' + sClr + ';cursor:pointer" onclick="toggleSubtask(' + x.id + ',' + si + ');openDetail(' + x.id + ')">' + sIcon + ' ' + sk.t;
       if (sk.d) stModalHtml += ' <span style="color:#5a6078;font-size:10px">' + sk.d + '</span>';
       stModalHtml += '</span>';
     }
@@ -2220,6 +2336,175 @@ function batchMarkDelete() {
   doRender();
   showToast('已删除 ' + ids.length + ' 项');
 }
+
+// ===== NEW: Add, Delete, Subtask Functions =====
+// New task storage
+function loadNewTasks() {
+  try {
+    var raw = localStorage.getItem("dashboard_new_v1");
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+function saveNewTasks(tasks) {
+  try { localStorage.setItem("dashboard_new_v1", JSON.stringify(tasks)); } catch(e) {}
+}
+
+// Show/Hide add task modal
+function showAddTaskMo() {
+  var cats = getCategories();
+  var catSel = document.getElementById("at-c");
+  catSel.innerHTML = '<option value="">选择类别</option>';
+  for (var ci = 0; ci < cats.length; ci++) {
+    if (cats[ci] === "全部") continue;
+    catSel.innerHTML += '<option value="' + cats[ci] + '">' + cats[ci] + '</option>';
+  }
+  var groups = {};
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].g) groups[TASKS[i].g] = 1;
+  }
+  var grpSel = document.getElementById("at-g");
+  grpSel.innerHTML = '<option value="">无</option>';
+  for (var g in groups) {
+    grpSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
+  }
+  document.getElementById("at-d").value = TODAY;
+  document.getElementById("at-title").value = "";
+  document.getElementById("at-ds").value = "";
+  document.getElementById("addTaskMo").classList.add("show");
+}
+function closeAddMo() {
+  document.getElementById("addTaskMo").classList.remove("show");
+}
+
+function submitAddTask() {
+  var title = document.getElementById("at-title").value.trim();
+  if (!title) { showToast("请输入任务标题"); return; }
+
+  var newTasks = loadNewTasks();
+  var newId = -1;
+  for (var ni = 0; ni < newTasks.length; ni++) {
+    if (newTasks[ni].id <= newId) newId = newTasks[ni].id - 1;
+  }
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].id <= newId) newId = TASKS[i].id - 1;
+  }
+
+  var task = {
+    id: newId,
+    t: title,
+    c: document.getElementById("at-c").value || "其他",
+    p: document.getElementById("at-p").value || "中",
+    s: document.getElementById("at-s").value || "待办",
+    d: document.getElementById("at-d").value || "",
+    ds: document.getElementById("at-ds").value.trim() || "",
+    pg: 0,
+    g: document.getElementById("at-g").value || "",
+    st: [],
+    updates: []
+  };
+  newTasks.push(task);
+  saveNewTasks(newTasks);
+  closeAddMo();
+  updateSyncUI();
+  doRender();
+  showToast("已新建: " + title);
+}
+
+// Delete a task
+function deleteTask(id) {
+  var merged = getMergedTasks();
+  var t = null;
+  for (var i = 0; i < merged.length; i++) {
+    if (merged[i].id === id) { t = merged[i]; break; }
+  }
+  if (!t) return;
+  if (!confirm("确定删除「" + t.t + "」？")) return;
+
+  var changes = loadLocalChanges();
+  var cid = String(id);
+  if (!changes[cid]) changes[cid] = {};
+  changes[cid]._deleted = true;
+  saveLocalChanges(changes);
+  doRender();
+  updateSyncUI();
+  showToast("已删除: " + t.t);
+}
+
+// Toggle subtask: 待办 → 进行中 → 已完成 → 待办
+function toggleSubtask(taskId, stIdx) {
+  var changes = loadLocalChanges();
+  var cid = String(taskId);
+  if (!changes[cid]) changes[cid] = {};
+
+  var origSt = null;
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].id === taskId && TASKS[i].st) {
+      origSt = JSON.parse(JSON.stringify(TASKS[i].st));
+      break;
+    }
+  }
+  if (!origSt) return;
+
+  var curSt = JSON.parse(JSON.stringify(origSt));
+  if (changes[cid].st) {
+    for (var si = 0; si < changes[cid].st.length; si++) {
+      var cst = changes[cid].st[si];
+      for (var oi = 0; oi < curSt.length; oi++) {
+        if (curSt[oi].t === cst.t) curSt[oi].s = cst.s;
+      }
+    }
+  }
+
+  var states = ["待办", "进行中", "已完成"];
+  var curState = curSt[stIdx].s;
+  var nextIdx = (states.indexOf(curState) + 1) % 3;
+  curSt[stIdx].s = states[nextIdx];
+
+  changes[cid].st = curSt;
+  saveLocalChanges(changes);
+  updateSyncUI();
+  doRender();
+  showToast(curSt[stIdx].t + " → " + states[nextIdx]);
+}
+
+// Override updateSyncUI to account for new tasks
+updateSyncUI = (function(orig) {
+  return function() {
+    var changes = loadLocalChanges();
+    var newTasks = loadNewTasks();
+    var count = Object.keys(changes).length + newTasks.length;
+    var btn = document.getElementById("syncBtn");
+    var cntEl = document.getElementById("syncCount");
+    var clrBtn = document.getElementById("clearBtn");
+    if (count > 0) {
+      cntEl.textContent = "(" + count + ")";
+      btn.classList.add("has-changes");
+      clrBtn.style.display = "inline-flex";
+    } else {
+      cntEl.textContent = "";
+      btn.classList.remove("has-changes");
+      clrBtn.style.display = "none";
+    }
+  };
+})();
+
+// Override clearLocalChanges
+clearLocalChanges = (function(orig) {
+  return function() {
+    var changes = loadLocalChanges();
+    var newTasks = loadNewTasks();
+    var hasChanges = Object.keys(changes).length > 0 || newTasks.length > 0;
+    if (!hasChanges) { showToast("没有待清除的本地变更"); return; }
+    if (confirm("确定清除所有本地变更？")) {
+      saveLocalChanges({});
+      saveNewTasks([]);
+      updateSyncUI();
+      doRender();
+      showToast("本地变更已清除");
+    }
+  };
+})();
+// ===== END NEW FUNCTIONS =====
 
 fetchData(function() {
   updateSyncUI();

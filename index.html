@@ -2392,109 +2392,219 @@ var markmapLoaded = false;
 var mmSvg = null;
 var treeEditId = null;
 
-function renderTree() {
-  var data = getMergedTasks();
-  var lastCat = '', lastGrp = '';
-  var html = '';
+// ===== TREE VIEW (D3.js Visual Tree) =====
+var treeEditId = null;
+var treeSvg = null;
 
-  // Group tasks by category > group
-  var cats = {};
-  for (var i = 0; i < data.length; i++) {
-    var t = data[i];
-    var cat = t.c || '其他';
-    if (!cats[cat]) cats[cat] = {};
-    var gname = t.g || '未分组';
-    if (!cats[cat][gname]) cats[cat][gname] = [];
-    cats[cat][gname].push(t);
-  }
-
-  var catOrder = Object.keys(cats).sort();
-  for (var ci = 0; ci < catOrder.length; ci++) {
-    var c = catOrder[ci];
-    var groups = cats[c];
-    var gnames = Object.keys(groups).sort();
-
-    // Category stats
-    var catTotal = 0, catDone = 0;
-    for (var gi = 0; gi < gnames.length; gi++) {
-      for (var ti = 0; ti < groups[gnames[gi]].length; ti++) {
-        catTotal++;
-        if (groups[gnames[gi]][ti].s === '已完成') catDone++;
-      }
-    }
-    var pct = catTotal > 0 ? Math.round(catDone/catTotal*100) : 0;
-    var barColor = pct === 100 ? '#2ed573' : (pct > 50 ? '#ff9f43' : '#ff4d6a');
-
-    // Category header (collapsible)
-    html += '<div class="tn-cat">';
-    html += '<div class="tn-cat-h" onclick="var n=this.nextElementSibling;n.style.display=n.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.tn-arr\').classList.toggle(\'tn-open\')">';
-    html += '<span class="tn-arr tn-open">&#9660;</span> <strong>' + c + '</strong>';
-    html += ' <span class="tn-stat">' + catDone + '/' + catTotal + ' (' + pct + '%)</span>';
-    html += '<span class="tn-bar"><span class="tn-fill" style="width:' + pct + '%;background:' + barColor + '"></span></span>';
-    html += '</div>';
-    html += '<div class="tn-body">';
-
-    for (var gi = 0; gi < gnames.length; gi++) {
-      var gn = gnames[gi];
-      var tasks = groups[gn];
-
-      // Group header
-      html += '<div class="tn-grp">';
-      html += '<div class="tn-grp-h">&#128193; ' + gn + ' <span class="tn-grp-cnt">' + tasks.length + '</span></div>';
-
-      for (var ti = 0; ti < tasks.length; ti++) {
-        var t = tasks[ti];
-        var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
-        var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
-        var doneCls = t.s === '已完成' ? ' tn-done' : '';
-        var localCls = t._local ? ' tn-local' : '';
-        var overdueCls = '';
-        if (t.s !== '已完成' && t.d && t.d !== '') {
-          var dd = new Date(t.d);
-          var td = new Date(TODAY);
-          if (dd < td) overdueCls = ' tn-overdue';
-        }
-
-        html += '<div class="tn-task' + doneCls + localCls + overdueCls + '" onclick="openTreeEdit(' + t.id + ')" title="点击编辑">';
-        html += '<span class="tn-sicon">' + sIcon + '</span>';
-        html += '<span class="tn-picon">' + pIcon + '</span>';
-        html += '<span class="tn-name">' + t.t + '</span>';
-        html += '<span class="tn-pg">' + t.pg + '%</span>';
-        html += '</div>';
-
-        // Subtasks inline
-        if (t.st && t.st.length > 0) {
-          for (var si = 0; si < t.st.length; si++) {
-            var st = t.st[si];
-            var ssIcon = st.s === '已完成' ? '✅' : (st.s === '进行中' ? '⏳' : '📋');
-            html += '<div class="tn-st' + (st.s === '已完成' ? ' tn-done' : '') + '">';
-            html += '<span class="tn-sicon">' + ssIcon + '</span>';
-            html += '<span class="tn-name">' + st.t + '</span>';
-            html += '</div>';
-          }
-        }
-
-        // Latest update
-        var lu = null;
-        if (t.updates && t.updates.length > 0) lu = t.updates[t.updates.length-1];
-        if (lu) {
-          html += '<div class="tn-upd">' + (lu.d || '') + ' ' + lu.t.substring(0,40) + '</div>';
-        }
-      }
-      html += '</div>'; // tn-grp
-    }
-    html += '</div>'; // tn-body
-    html += '</div>'; // tn-cat
-  }
-
-  html += '<div style="text-align:center;padding:12px;color:#5a6078;font-size:11px">点击任意任务节点可编辑分组/优先级/状态</div>';
-
-  document.getElementById('treeBox').innerHTML = html;
+function loadD3(callback) {
+  if (typeof d3 !== 'undefined') { callback(); return; }
+  var s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
+  s.onload = callback;
+  document.body.appendChild(s);
 }
 
-// Open/Create tree edit modal
-var treeEditId = null;
+function renderTree() {
+  loadD3(function() {
+    var data = getMergedTasks();
 
+    // Build tree data structure
+    function buildTreeData() {
+      var root = { name: '📋 全部任务', children: [] };
+      var cats = {};
+      for (var i = 0; i < data.length; i++) {
+        var t = data[i];
+        if (t.s === '已完成') continue; // Skip completed for cleaner view
+        var cat = t.c || '其他';
+        if (!cats[cat]) {
+          cats[cat] = { name: cat, children: [] };
+          root.children.push(cats[cat]);
+        }
+        var gname = t.g || '未分组';
+        var grp = null;
+        for (var gi = 0; gi < cats[cat].children.length; gi++) {
+          if (cats[cat].children[gi].name === gname) { grp = cats[cat].children[gi]; break; }
+        }
+        if (!grp) {
+          grp = { name: gname, children: [] };
+          cats[cat].children.push(grp);
+        }
+        var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
+        var sIcon = t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋');
+        grp.children.push({
+          id: t.id,
+          name: pIcon + ' ' + sIcon + ' ' + t.t,
+          task: t
+        });
+      }
+      // Remove empty categories
+      root.children = root.children.filter(function(c) { return c.children.length > 0; });
+      return root;
+    }
+
+    var treeData = buildTreeData();
+    if (treeData.children.length === 0) {
+      document.getElementById('treeBox').innerHTML = '<div class="empty" style="padding:40px">所有任务已完成 🎉</div>';
+      return;
+    }
+
+    // Setup SVG
+    var container = document.getElementById('treeBox');
+    container.innerHTML = '';
+
+    var width = Math.max(800, container.clientWidth || 800);
+    var height = 600;
+    var margin = { top: 40, right: 60, bottom: 40, left: 60 };
+
+    var svg = d3.select('#treeBox').append('svg')
+      .attr('width', '100%')
+      .attr('height', height)
+      .attr('viewBox', [0, 0, width, height])
+      .style('background', '#151720')
+      .style('border-radius', '8px')
+      .style('cursor', 'grab');
+
+    // Zoom behavior
+    var g = svg.append('g').attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+    var zoom = d3.zoom()
+      .scaleExtent([0.3, 3])
+      .on('zoom', function(event) { g.attr('transform', event.transform); });
+
+    svg.call(zoom);
+    svg.on('dblclick.zoom', null); // Disable double-click zoom
+
+    // Tree layout
+    var tree = d3.tree()
+      .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
+      .separation(function(a, b) { return (a.parent === b.parent ? 1 : 1.5); });
+
+    var root = d3.hierarchy(treeData);
+    root.x0 = height / 2;
+    root.y0 = 0;
+
+    // Collapse by default at category level, expand groups
+    root.children.forEach(function(cat) {
+      if (cat.children) {
+        cat.children.forEach(function(grp) { });
+      }
+    });
+
+    function update(source) {
+      var treeData = tree(root);
+      var nodes = treeData.descendants();
+      var links = treeData.links();
+
+      // Normalize for fixed depth
+      nodes.forEach(function(d) { d.y = d.depth * 220; });
+
+      // Update links
+      var link = g.selectAll('path.link')
+        .data(links, function(d) { return d.target.id; });
+
+      link.exit().remove();
+
+      var linkEnter = link.enter().append('path')
+        .attr('class', 'link')
+        .attr('fill', 'none')
+        .attr('stroke', '#2a2e3f')
+        .attr('stroke-width', 2);
+
+      link = linkEnter.merge(link);
+
+      // Update nodes
+      var node = g.selectAll('g.node')
+        .data(nodes, function(d) { return d.id || (d.id = ++nodeIdCounter); });
+
+      node.exit().remove();
+
+      var nodeEnter = node.enter().append('g')
+        .attr('class', 'node')
+        .attr('cursor', 'pointer')
+        .on('click', function(event, d) {
+          if (d.data.id && d.data.id > 0) {
+            openTreeEdit(d.data.id);
+          } else if (d.children) {
+            // Toggle collapse for non-leaf nodes
+            d.children.forEach(function(c) { c._hidden = !c._hidden; });
+            update(d);
+          }
+        });
+
+      // Circles for non-task nodes
+      nodeEnter.filter(function(d) { return !d.data.id; })
+        .append('circle')
+        .attr('r', 6)
+        .attr('fill', '#6c8cff')
+        .attr('stroke', '#4a6cdf')
+        .attr('stroke-width', 2);
+
+      // Task nodes: rounded rects
+      var taskEnter = nodeEnter.filter(function(d) { return d.data.id && d.data.id > 0; });
+      taskEnter.append('rect')
+        .attr('width', function(d) { return Math.max(d.data.name.length * 9 + 20, 80); })
+        .attr('height', 30)
+        .attr('x', function(d) { return -Math.max(d.data.name.length * 9 + 20, 80) / 2; })
+        .attr('y', -15)
+        .attr('rx', 6)
+        .attr('ry', 6)
+        .attr('fill', function(d) {
+          var s = d.data.task ? d.data.task.s : '';
+          return s === '进行中' ? '#2d4a3e' : (s === '等待' ? '#2a2e3f' : '#1a2a3a');
+        })
+        .attr('stroke', function(d) {
+          var t = d.data.task;
+          if (!t) return '#3a3f55';
+          if (t.s === '进行中') return '#2ed573';
+          if (t.p === '紧急') return '#ff4d6a';
+          return '#6c8cff';
+        })
+        .attr('stroke-width', 1.5);
+
+      taskEnter.append('text')
+        .attr('dy', 4)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#e8eaf0')
+        .attr('font-size', '12px')
+        .attr('font-weight', '600')
+        .text(function(d) {
+          var name = d.data.name || '';
+          return name.length > 20 ? name.substring(0, 18) + '..' : name;
+        });
+
+      // Merge
+      node = nodeEnter.merge(node);
+
+      // Position nodes
+      var transition = svg.transition().duration(300);
+      node.attr('transform', function(d) {
+        return 'translate(' + d.y + ',' + d.x + ')';
+      });
+
+      // Position links
+      link.attr('d', function(d) {
+        return 'M' + d.source.y + ',' + d.source.x +
+          'C' + (d.source.y + d.target.y) / 2 + ',' + d.source.x +
+          ' ' + (d.source.y + d.target.y) / 2 + ',' + d.target.x +
+          ' ' + d.target.y + ',' + d.target.x;
+      });
+    }
+
+    var nodeIdCounter = 0;
+    update(root);
+
+    // Drag to re-categorize - HTML5 drag from task nodes
+    // Add a legend
+    var legend = svg.append('g')
+      .attr('transform', 'translate(10, 10)')
+      .attr('font-size', '10px')
+      .attr('fill', '#9ca3b8');
+
+    legend.append('text').text('🖱️ 点击任务 → 编辑分组/优先级/状态 | 🔍 滚轮缩放 | 🖱️ 拖拽平移').attr('font-size', '10px');
+  });
+}
+
+// Tree Edit Modal
 function openTreeEdit(id) {
   treeEditId = id;
   var merged = getMergedTasks();
@@ -2506,7 +2616,6 @@ function openTreeEdit(id) {
 
   document.getElementById('treeEditTitle').textContent = '✏️ ' + t.t;
 
-  // Groups dropdown
   var groups = {};
   for (var i = 0; i < TASKS.length; i++) {
     if (TASKS[i].g) groups[TASKS[i].g] = 1;
@@ -2534,10 +2643,14 @@ function treeEditSave() {
   var cid = String(treeEditId);
   if (!changes[cid]) changes[cid] = {};
 
-  changes[cid]._group = document.getElementById('te-g').value;
-  changes[cid]._priority = document.getElementById('te-p').value;
-  changes[cid].s = document.getElementById('te-s').value;
-  if (changes[cid].s === '已完成') changes[cid].pg = 100;
+  var g = document.getElementById('te-g').value;
+  var p = document.getElementById('te-p').value;
+  var s = document.getElementById('te-s').value;
+
+  if (g !== '') changes[cid]._group = g;
+  if (p) changes[cid]._priority = p;
+  if (s) changes[cid].s = s;
+  if (s === '已完成') changes[cid].pg = 100;
 
   saveLocalChanges(changes);
   closeTreeEdit();

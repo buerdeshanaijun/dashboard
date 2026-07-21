@@ -232,6 +232,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .ov-card .ov-progress .ov-bar{height:100%;border-radius:3px;transition:width .5s}
 .ov-stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#c4c9d4}
 .ov-stat-row .ov-label{color:#9ca3b8}
+#treeBox{background:#151720;border-radius:10px;margin-top:4px}
+#markmapContainer svg{width:100%;height:100%}
+#markmapContainer text{cursor:pointer}
+#markmapContainer text:hover{fill:#6c8cff!important}
 .batch-btn.cancel{background:rgba(120,120,140,.12);color:#9ca3b8}
 .tc-select{position:absolute;top:8px;left:8px;width:18px;height:18px;border-radius:4px;border:2px solid #3a3f55;background:transparent;cursor:pointer;z-index:6;display:none;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .15s}
 .batch-bar{display:none;align-items:center;gap:8px;padding:6px 12px;background:rgba(108,140,255,.1);border:1px solid rgba(108,140,255,.2);border-radius:8px;margin-bottom:8px}
@@ -287,8 +291,9 @@ body.batch-mode .tt{padding-right:30px}
   <div class="tab" onclick="switchTab('weekly',this)">周总结</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
+  <div class="tab" onclick="switchTab('tree',this)">🌳 脑图</div>
   <div class="tab" onclick="switchTab('all',this)">全部任务</div>
-  <div class="tab" onclick="switchTab('done',this)">&#10003; 已完成</div>
+  <div class="tab" onclick="switchTab('done',this)">✓ 已完成</div>
 </div>
 
 <div id="loadingArea" style="padding:40px 16px;text-align:center">
@@ -333,6 +338,24 @@ body.batch-mode .tt{padding-right:30px}
 <div class="vw" id="v-calendar" style="display:none">
   <div id="calBox" style="padding:0 4px"></div>
 </div>
+<div class="vw" id="v-tree" style="display:none">
+  <div id="treeBox" style="width:100%;height:70vh;overflow:hidden;position:relative">
+    <div id="markmapContainer" style="width:100%;height:100%"></div>
+  </div>
+</div>
+<div class="mo" id="treeEditMo" onclick="if(event.target===this)closeTreeEdit()"><div class="md" id="treeEditMd" onclick="event.stopPropagation()">
+  <h2 id="treeEditTitle">编辑任务</h2>
+  <div class="fl"><div class="form-row">
+    <div><label>分组</label><select id="te-g"></select></div>
+    <div><label>优先级</label><select id="te-p"><option value="紧急">紧急</option><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option></select></div>
+    <div><label>状态</label><select id="te-s"><option value="待办">待办</option><option value="进行中">进行中</option><option value="等待">等待</option><option value="已完成">已完成</option></select></div>
+  </div></div>
+  <div class="form-actions">
+    <button class="btn-primary" id="treeEditSaveBtn" onclick="treeEditSave()">✓ 确认修改</button>
+    <button class="btn-cancel" onclick="closeTreeEdit()">取消</button>
+  </div>
+</div></div>
+
 
 <div class="vw" id="v-overview" style="display:none">
   <div id="overviewBox" style="padding:0 4px"></div>
@@ -428,6 +451,8 @@ function getMergedTasks() {
       var ch = changes[cid];
       if (ch.s) task.s = ch.s;
       if (ch.pg !== undefined) task.pg = ch.pg;
+      if (ch._group !== undefined) task.g = ch._group;
+      if (ch._priority !== undefined) task.p = ch._priority;
       // Apply subtask changes
       if (ch.st) task.st = ch.st;
       task._local = true;
@@ -2110,6 +2135,9 @@ function switchTab(name, tabEl) {
   if (name === "calendar") renderCalendar(getFiltered());
   if (name === "done") renderDone(getMergedTasks());
   if (name === "overview") renderOverview(getMergedTasks());
+  if (name === "tree") {
+    setTimeout(function(){ renderTree(); }, 100);
+  }
   if (name === "weekly") {
     setTimeout(function(){ renderTrendChart(getMergedTasks()); }, 50);
   }
@@ -2337,6 +2365,203 @@ function batchMarkDelete() {
   showToast('已删除 ' + ids.length + ' 项');
 }
 
+
+// ===== TREE VIEW (Mind Map) =====
+var markmapLoaded = false;
+var mmSvg = null;
+var treeEditId = null;
+
+function loadMarkmap(callback) {
+  if (markmapLoaded) { if(callback) callback(); return; }
+  // Load markmap CSS
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/index.css';
+  document.head.appendChild(link);
+  // Load d3 + markmap
+  var script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/browser/index.js';
+  script.onload = function() {
+    markmapLoaded = true;
+    if(callback) callback();
+  };
+  document.body.appendChild(script);
+}
+
+function renderTree() {
+  loadMarkmap(function() {
+    var data = getMergedTasks();
+
+    // Build markdown tree
+    var lines = ['# 📋 任务总览'];
+    // Group by category
+    var cats = {};
+    for (var i = 0; i < data.length; i++) {
+      var t = data[i];
+      var cat = t.c || '其他';
+      if (!cats[cat]) cats[cat] = {};
+      var gname = t.g || '未分组';
+      if (!cats[cat][gname]) cats[cat][gname] = [];
+      cats[cat][gname].push(t);
+    }
+
+    var catOrder = Object.keys(cats).sort();
+    for (var ci = 0; ci < catOrder.length; ci++) {
+      var c = catOrder[ci];
+      var groups = cats[c];
+      var gnames = Object.keys(groups).sort();
+
+      // Category header with progress
+      var catTotal = 0, catDone = 0;
+      for (var gi = 0; gi < gnames.length; gi++) {
+        for (var ti = 0; ti < groups[gnames[gi]].length; ti++) {
+          catTotal++;
+          if (groups[gnames[gi]][ti].s === '已完成') catDone++;
+        }
+      }
+      var pct = catTotal > 0 ? Math.round(catDone/catTotal*100) : 0;
+
+      lines.push('');
+      lines.push('## ' + c + ' (' + catDone + '/' + catTotal + ' ' + pct + '%)');
+
+      for (var gi = 0; gi < gnames.length; gi++) {
+        var gn = gnames[gi];
+        var tasks = groups[gn];
+        tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
+
+        lines.push('### ' + gn + ' (' + tasks.length + ')');
+        for (var ti = 0; ti < tasks.length; ti++) {
+          var t = tasks[ti];
+          var icon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
+          var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
+          lines.push('- ' + icon + ' ' + pIcon + ' **ID:' + t.id + '** ' + t.t);
+          if (t.d) lines.push('  - 截止: ' + t.d);
+          // Subtasks
+          if (t.st && t.st.length > 0) {
+            for (var si = 0; si < t.st.length; si++) {
+              var st = t.st[si];
+              var sIcon = st.s === '已完成' ? '✅' : (st.s === '进行中' ? '⏳' : '📋');
+              lines.push('  - ' + sIcon + ' ' + st.t);
+            }
+          }
+          // Latest update
+          var lu = null;
+          if (t.updates && t.updates.length > 0) lu = t.updates[t.updates.length-1];
+          if (lu) lines.push('  - 📌 ' + lu.t.substring(0,30) + (lu.t.length>30?'...':''));
+        }
+      }
+    }
+
+    var markdown = lines.join('\n');
+    document.getElementById('markmapContainer').innerHTML = '';
+
+    // Render markmap
+    var el = document.getElementById('markmapContainer');
+    try {
+      var mm = new markmap.Markmap(el, {
+        colorFreezeLevel: 2,
+        maxWidth: 300,
+        spacingVertical: 8,
+        spacingHorizontal: 15,
+        duration: 300,
+        zoom: true,
+        pan: true
+      });
+      mm.setData(markdown);
+      mm.render();
+      mmSvg = el.querySelector('svg');
+      // Add click handler
+      if (mmSvg) {
+        mmSvg.addEventListener('click', function(e) {
+          var textEl = e.target.closest('text');
+          if (!textEl) return;
+          var txt = textEl.textContent || '';
+          var idMatch = txt.match(/ID:(\d+)/);
+          if (idMatch) {
+            var tid = parseInt(idMatch[1]);
+            openTreeEdit(tid);
+          }
+        });
+      }
+      document.getElementById('syncStatus').textContent = '🌳 脑图已生成 (' + data.length + ' 项任务)';
+      document.getElementById('syncStatus').className = 'sync-badge ok';
+    } catch(e) {
+      document.getElementById('markmapContainer').innerHTML = '<div class="empty">脑图渲染失败: ' + e.message + '</div>';
+    }
+  });
+}
+
+// Tree Edit Modal
+function openTreeEdit(id) {
+  treeEditId = id;
+  var merged = getMergedTasks();
+  var t = null;
+  for (var i = 0; i < merged.length; i++) {
+    if (merged[i].id === id) { t = merged[i]; break; }
+  }
+  if (!t) return;
+
+  document.getElementById('treeEditTitle').textContent = '✏️ ' + t.t;
+
+  // Groups dropdown
+  var groups = {};
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].g) groups[TASKS[i].g] = 1;
+  }
+  var grpSel = document.getElementById('te-g');
+  grpSel.innerHTML = '<option value="">无</option>';
+  for (var g in groups) {
+    grpSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
+  }
+  grpSel.value = t.g || '';
+
+  document.getElementById('te-p').value = t.p || '中';
+  document.getElementById('te-s').value = t.s || '待办';
+
+  document.getElementById('treeEditMo').classList.add('show');
+}
+
+function closeTreeEdit() {
+  document.getElementById('treeEditMo').classList.remove('show');
+  treeEditId = null;
+}
+
+function treeEditSave() {
+  if (!treeEditId) return;
+  var changes = loadLocalChanges();
+  var cid = String(treeEditId);
+  if (!changes[cid]) changes[cid] = {};
+
+  var g = document.getElementById('te-g').value;
+  var p = document.getElementById('te-p').value;
+  var s = document.getElementById('te-s').value;
+
+  // For new fields like g and p that aren't in the original changes format,
+  // we store them under special keys
+  if (g) changes[cid]._group = g;
+  if (p) changes[cid]._priority = p;
+  if (s) changes[cid].s = s;
+
+  // Also set pg if completed
+  if (s === '已完成') changes[cid].pg = 100;
+  else if (changes[cid].pg === 100 && s !== '已完成') changes[cid].pg = 0;
+
+  saveLocalChanges(changes);
+  closeTreeEdit();
+  updateSyncUI();
+  doRender();
+  showToast('已更新任务 #' + treeEditId);
+}
+
+// Override getMergedTasks to apply group/priority changes
+(function() {
+  var origGet = getMergedTasks;
+  if (origGet) {
+    // Can't easily override, so we modify the renderTree to handle this
+  }
+})();
+
+// ===== END TREE VIEW =====
 // ===== NEW: Add, Delete, Subtask Functions =====
 // New task storage
 function loadNewTasks() {

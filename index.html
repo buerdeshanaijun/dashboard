@@ -1203,11 +1203,22 @@ function makeCard(x) {
 // Get filtered tasks (from merged data)
 function getFiltered() {
   var data = getMergedTasks();
-  // Category filter
+  // Category/Parent filter
   if (filterCat !== "全部") {
+    var pCats = getParentCats();
+    var isParent = false;
+    for (var pi = 0; pi < pCats.length; pi++) {
+      if (filterCat === pCats[pi]) { isParent = true; break; }
+    }
     var result = [];
     for (var i = 0; i < data.length; i++) {
-      if (data[i].c === filterCat) result.push(data[i]);
+      if (isParent) {
+        var tp = data[i].p || '📦 其他';
+        if (tp === filterCat) result.push(data[i]);
+      } else {
+        var tkey = (data[i].p || '📦 其他') + ' › ' + (data[i].c || '其他');
+        if (tkey === filterCat) result.push(data[i]);
+      }
     }
     data = result;
   }
@@ -1232,9 +1243,24 @@ function getFiltered() {
 function getCategories() {
   var cats = {};
   for (var i = 0; i < TASKS.length; i++) {
-    cats[TASKS[i].c] = 1;
+    var p = TASKS[i].p || '📦 其他';
+    var c = TASKS[i].c || '其他';
+    var key = p + ' › ' + c;
+    cats[key] = 1;
   }
-  return ["全部"].concat(Object.keys(cats));
+  return ["全部"].concat(Object.keys(cats).sort());
+}
+
+function getParentCats() {
+  var ps = {};
+  for (var i = 0; i < TASKS.length; i++) {
+    var p = TASKS[i].p || '📦 其他';
+    ps[p] = 1;
+  }
+  return Object.keys(ps).sort(function(a,b){
+    var order = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+    return (order[a]||9)-(order[b]||9);
+  });
 }
 
 // Render stats bar
@@ -1652,13 +1678,25 @@ function renderOverview(data) {
 // Render filter buttons
 function renderFilters() {
   var cats = getCategories();
+  var pCats = getParentCats();
   var ids = ["fk","ft","fg","fa","fd"];
   for (var fi = 0; fi < ids.length; fi++) {
     var html = "";
+    // Parent-level quick filters
+    for (var pi = 0; pi < pCats.length; pi++) {
+      var pc = pCats[pi];
+      var active = (filterCat === pc) ? " on" : "";
+      var short = pc.replace(/[🔬🏭⚙️👤📦]/,'').trim();
+      html += '<span class="fb' + active + '" onclick="setFilter(\'' + pc + '\')" title="' + pc + '">' + short + '</span>';
+    }
+    html += '<span style="color:#2a2e3f;margin:0 2px">|</span>';
+    // All categories
     for (var ci = 0; ci < cats.length; ci++) {
       var c = cats[ci];
       var active = (filterCat === c) ? " on" : "";
-      html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')">' + c + '</span>';
+      // Show short form: just the category name without parent
+      var shortName = c.indexOf(' › ') > 0 ? c.split(' › ')[1] : c;
+      html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')" title="' + c + '">' + shortName + '</span>';
     }
     document.getElementById(ids[fi]).innerHTML = html;
   }

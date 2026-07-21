@@ -2441,6 +2441,7 @@ function renderTree() {
 
     // Build graph data
     var nodes = [];
+    var P_COLORS = {'🔬 科研项目':'#6c8cff','🏭 生产作业':'#ff9f43','⚙️ 管理/安全':'#ff4d6a','👤 私人事务':'#a55eea','📦 其他':'#9ca3b8'};
     var links = [];
     var nodeMap = {};
     var idCounter = 0;
@@ -2467,24 +2468,35 @@ function renderTree() {
       cats[cat][gname].push(t);
     }
 
-    var catOrder = Object.keys(cats).sort();
-    for (var ci = 0; ci < catOrder.length; ci++) {
-      var catName = catOrder[ci];
-      var catId = addNode(catName, 'category', null, rootId);
-      var groups = cats[catName];
-      var gnames = Object.keys(groups).sort();
-      for (var gi = 0; gi < gnames.length; gi++) {
-        var grpName = gnames[gi];
-        var grpId = addNode(grpName, 'group', null, catId);
-        var tasks = groups[grpName];
-        tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
-        for (var ti = 0; ti < tasks.length; ti++) {
-          var t = tasks[ti];
-          var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
-          var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
-          var label = sIcon + ' ' + pIcon + ' ' + t.t;
-          if (label.length > 30) label = label.substring(0, 28) + '..';
-          addNode(label, 'task', t, grpId);
+    var parentOrder = Object.keys(parents).sort(function(a,b){
+      var order = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+      return (order[a]||9)-(order[b]||9);
+    });
+    for (var pi = 0; pi < parentOrder.length; pi++) {
+      var pname = parentOrder[pi];
+      var pColor = P_COLORS[pname] || '#9ca3b8';
+      var pId = addNode(pname, 'parent', null, rootId, pColor);
+
+      var cats = parents[pname];
+      var catOrder = Object.keys(cats).sort();
+      for (var ci = 0; ci < catOrder.length; ci++) {
+        var catName = catOrder[ci];
+        var catId = addNode(catName, 'category', null, pId);
+        var groups = cats[catName];
+        var gnames = Object.keys(groups).sort();
+        for (var gi = 0; gi < gnames.length; gi++) {
+          var grpName = gnames[gi];
+          var grpId = addNode(grpName, 'group', null, catId);
+          var tasks = groups[grpName];
+          tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
+          for (var ti = 0; ti < tasks.length; ti++) {
+            var t = tasks[ti];
+            var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
+            var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
+            var label = sIcon + ' ' + pIcon + ' ' + t.t;
+            if (label.length > 30) label = label.substring(0, 28) + '..';
+            addNode(label, 'task', t, grpId);
+          }
         }
       }
     }
@@ -2497,16 +2509,18 @@ function renderTree() {
         return 160;
       }).strength(0.4))
       .force('charge', d3.forceManyBody().strength(function(d) {
-        if (d.type === 'root') return -800;
-        if (d.type === 'category') return -500;
-        if (d.type === 'group') return -300;
+        if (d.type === 'root') return -900;
+        if (d.type === 'parent') return -600;
+        if (d.type === 'category') return -400;
+        if (d.type === 'group') return -250;
         return -100;
       }))
       .force('center', d3.forceCenter(cx, cy))
       .force('collision', d3.forceCollide().radius(function(d) {
         if (d.type === 'task') return 35;
         if (d.type === 'group') return 45;
-        if (d.type === 'category') return 60;
+        if (d.type === 'category') return 55;
+        if (d.type === 'parent') return 65;
         return 50;
       }));
 
@@ -2543,6 +2557,12 @@ function renderTree() {
       .append('circle').attr('r', 28)
       .attr('fill', 'url(#rootGrad)')
       .attr('stroke', '#6c8cff').attr('stroke-width', 3);
+
+    // Parent nodes: colored circles with icon
+    node.filter(function(d) { return d.type === 'parent'; })
+      .append('circle').attr('r', 22)
+      .attr('fill', function(d) { return d.color || '#4a5568'; })
+      .attr('stroke', function(d) { return d.color || '#4a5568'; }).attr('stroke-width', 2).attr('opacity', 0.8);
     
     // Category nodes: medium circles
     node.filter(function(d) { return d.type === 'category'; })
@@ -2593,7 +2613,14 @@ function renderTree() {
       .text(function(d) { return d.name; });
 
     // Labels for non-task nodes
-    node.filter(function(d) { return d.type !== 'task'; })
+    node.filter(function(d) { return d.type === 'parent'; })
+      .append('text')
+      .attr('dy', 32).attr('text-anchor', 'middle')
+      .attr('fill', function(d) { return d.color || '#9ca3b8'; })
+      .attr('font-size', '12px').attr('font-weight', '800')
+      .text(function(d) { return d.name; });
+
+    node.filter(function(d) { return d.type !== 'task' && d.type !== 'parent'; })
       .append('text')
       .attr('dy', function(d) {
         return d.type === 'root' ? '36' : (d.type === 'category' ? '32' : '24');

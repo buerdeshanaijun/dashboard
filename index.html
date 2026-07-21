@@ -2419,6 +2419,18 @@ function renderTree() {
       .style('width', '100%').style('height', '100%')
       .style('display', 'block').style('background', '#0f1117');
 
+    // Enable zoom + prevent page scroll
+    var zoom = d3.zoom()
+      .scaleExtent([0.2, 5])
+      .on('zoom', function(event) {
+        containerG.attr('transform', event.transform);
+      });
+    svg.call(zoom);
+    svg.on('wheel.zoom', function(event) { event.preventDefault(); });
+    svg.on('dblclick.zoom', null);
+
+    var containerG = svg.append('g');
+
     // Arrow marker for links
     svg.append('defs').append('marker')
       .attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
@@ -2499,13 +2511,13 @@ function renderTree() {
       }));
 
     // Draw links
-    var link = svg.append('g').selectAll('line')
+    var link = containerG.append('g').selectAll('line')
       .data(links).enter().append('line')
       .attr('stroke', '#333').attr('stroke-width', 1.5)
       .attr('stroke-opacity', 0.5);
 
     // Draw nodes
-    var node = svg.append('g').selectAll('g')
+    var node = containerG.append('g').selectAll('g')
       .data(nodes).enter().append('g')
       .attr('cursor', 'pointer')
       .call(d3.drag()

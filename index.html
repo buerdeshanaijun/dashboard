@@ -232,10 +232,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .ov-card .ov-progress .ov-bar{height:100%;border-radius:3px;transition:width .5s}
 .ov-stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#c4c9d4}
 .ov-stat-row .ov-label{color:#9ca3b8}
-#treeBox{background:#151720;border-radius:10px;margin-top:4px}
-#markmapContainer svg{width:100%;height:100%}
-#markmapContainer text{cursor:pointer}
-#markmapContainer text:hover{fill:#6c8cff!important}
+/* Tree view */
+#treeBox{background:#151720;border-radius:10px;margin-top:4px;padding:10px 4px;overflow:auto;max-height:75vh}
+.tn-cat{margin-bottom:8px;border:1px solid #2a2e3f;border-radius:8px;overflow:hidden}
+.tn-cat-h{padding:8px 10px;background:#1a1d28;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;border-bottom:1px solid #2a2e3f;user-select:none}
+.tn-cat-h:hover{background:#1f2333}
+.tn-arr{font-size:8px;transition:transform .2s;color:#6c8cff}
+.tn-arr.tn-open{transform:rotate(0deg)}
+.tn-stat{font-size:10px;color:#9ca3b8;font-weight:400;margin-left:auto}
+.tn-bar{width:60px;height:4px;background:#2a2e3f;border-radius:2px;overflow:hidden;margin-left:6px}
+.tn-fill{height:100%;border-radius:2px;display:block}
+.tn-body{padding:4px 8px 8px}
+.tn-grp{margin-bottom:6px}
+.tn-grp-h{font-size:11px;font-weight:700;color:#6c8cff;padding:5px 4px;display:flex;align-items:center;gap:4px}
+.tn-grp-cnt{font-size:9px;color:#5a6078;font-weight:400;background:rgba(108,140,255,.1);padding:1px 6px;border-radius:6px}
+.tn-task{padding:5px 8px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;font-size:12px;transition:background .1s;border:1px solid transparent;margin-bottom:2px}
+.tn-task:hover{background:rgba(108,140,255,.08);border-color:rgba(108,140,255,.2)}
+.tn-task.tn-done{opacity:.5}
+.tn-task.tn-overdue{border-color:rgba(255,77,106,.3)!important;background:rgba(255,77,106,.05)}
+.tn-task.tn-local{border-color:rgba(255,159,67,.3)}
+.tn-sicon{font-size:12px;flex-shrink:0}
+.tn-picon{font-size:10px;flex-shrink:0}
+.tn-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tn-pg{font-size:10px;color:#5a6078;flex-shrink:0}
+.tn-st{padding:2px 8px 2px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:#9ca3b8}
+.tn-st.tn-done{color:#5a6078;text-decoration:line-through}
+.tn-upd{font-size:9px;color:#5a6078;padding:2px 8px 2px 28px}
+
 .batch-btn.cancel{background:rgba(120,120,140,.12);color:#9ca3b8}
 .tc-select{position:absolute;top:8px;left:8px;width:18px;height:18px;border-radius:4px;border:2px solid #3a3f55;background:transparent;cursor:pointer;z-index:6;display:none;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .15s}
 .batch-bar{display:none;align-items:center;gap:8px;padding:6px 12px;background:rgba(108,140,255,.1);border:1px solid rgba(108,140,255,.2);border-radius:8px;margin-bottom:8px}
@@ -339,9 +362,7 @@ body.batch-mode .tt{padding-right:30px}
   <div id="calBox" style="padding:0 4px"></div>
 </div>
 <div class="vw" id="v-tree" style="display:none">
-  <div id="treeBox" style="width:100%;height:70vh;overflow:hidden;position:relative">
-    <div id="markmapContainer" style="width:100%;height:100%"></div>
-  </div>
+  <div id="treeBox"></div>
 </div>
 <div class="mo" id="treeEditMo" onclick="if(event.target===this)closeTreeEdit()"><div class="md" id="treeEditMd" onclick="event.stopPropagation()">
   <h2 id="treeEditTitle">编辑任务</h2>
@@ -2371,133 +2392,109 @@ var markmapLoaded = false;
 var mmSvg = null;
 var treeEditId = null;
 
-function loadMarkmap(callback) {
-  if (markmapLoaded) { if(callback) callback(); return; }
-  // Load d3 first
-  var s1 = document.createElement('script');
-  s1.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
-  s1.onload = function() {
-    // Load markmap CSS
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/index.css';
-    document.head.appendChild(link);
-    // Load markmap
-    var s2 = document.createElement('script');
-    s2.src = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/browser/index.js';
-    s2.onload = function() {
-      markmapLoaded = true;
-      if(callback) callback();
-    };
-    document.body.appendChild(s2);
-  };
-  document.body.appendChild(s1);
-}
-
 function renderTree() {
-  loadMarkmap(function() {
-    var data = getMergedTasks();
+  var data = getMergedTasks();
+  var lastCat = '', lastGrp = '';
+  var html = '';
 
-    // Build markdown tree
-    var lines = ['# 📋 任务总览'];
-    // Group by category
-    var cats = {};
-    for (var i = 0; i < data.length; i++) {
-      var t = data[i];
-      var cat = t.c || '其他';
-      if (!cats[cat]) cats[cat] = {};
-      var gname = t.g || '未分组';
-      if (!cats[cat][gname]) cats[cat][gname] = [];
-      cats[cat][gname].push(t);
+  // Group tasks by category > group
+  var cats = {};
+  for (var i = 0; i < data.length; i++) {
+    var t = data[i];
+    var cat = t.c || '其他';
+    if (!cats[cat]) cats[cat] = {};
+    var gname = t.g || '未分组';
+    if (!cats[cat][gname]) cats[cat][gname] = [];
+    cats[cat][gname].push(t);
+  }
+
+  var catOrder = Object.keys(cats).sort();
+  for (var ci = 0; ci < catOrder.length; ci++) {
+    var c = catOrder[ci];
+    var groups = cats[c];
+    var gnames = Object.keys(groups).sort();
+
+    // Category stats
+    var catTotal = 0, catDone = 0;
+    for (var gi = 0; gi < gnames.length; gi++) {
+      for (var ti = 0; ti < groups[gnames[gi]].length; ti++) {
+        catTotal++;
+        if (groups[gnames[gi]][ti].s === '已完成') catDone++;
+      }
     }
+    var pct = catTotal > 0 ? Math.round(catDone/catTotal*100) : 0;
+    var barColor = pct === 100 ? '#2ed573' : (pct > 50 ? '#ff9f43' : '#ff4d6a');
 
-    var catOrder = Object.keys(cats).sort();
-    for (var ci = 0; ci < catOrder.length; ci++) {
-      var c = catOrder[ci];
-      var groups = cats[c];
-      var gnames = Object.keys(groups).sort();
+    // Category header (collapsible)
+    html += '<div class="tn-cat">';
+    html += '<div class="tn-cat-h" onclick="var n=this.nextElementSibling;n.style.display=n.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'.tn-arr\').classList.toggle(\'tn-open\')">';
+    html += '<span class="tn-arr tn-open">&#9660;</span> <strong>' + c + '</strong>';
+    html += ' <span class="tn-stat">' + catDone + '/' + catTotal + ' (' + pct + '%)</span>';
+    html += '<span class="tn-bar"><span class="tn-fill" style="width:' + pct + '%;background:' + barColor + '"></span></span>';
+    html += '</div>';
+    html += '<div class="tn-body">';
 
-      // Category header with progress
-      var catTotal = 0, catDone = 0;
-      for (var gi = 0; gi < gnames.length; gi++) {
-        for (var ti = 0; ti < groups[gnames[gi]].length; ti++) {
-          catTotal++;
-          if (groups[gnames[gi]][ti].s === '已完成') catDone++;
+    for (var gi = 0; gi < gnames.length; gi++) {
+      var gn = gnames[gi];
+      var tasks = groups[gn];
+
+      // Group header
+      html += '<div class="tn-grp">';
+      html += '<div class="tn-grp-h">&#128193; ' + gn + ' <span class="tn-grp-cnt">' + tasks.length + '</span></div>';
+
+      for (var ti = 0; ti < tasks.length; ti++) {
+        var t = tasks[ti];
+        var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
+        var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
+        var doneCls = t.s === '已完成' ? ' tn-done' : '';
+        var localCls = t._local ? ' tn-local' : '';
+        var overdueCls = '';
+        if (t.s !== '已完成' && t.d && t.d !== '') {
+          var dd = new Date(t.d);
+          var td = new Date(TODAY);
+          if (dd < td) overdueCls = ' tn-overdue';
+        }
+
+        html += '<div class="tn-task' + doneCls + localCls + overdueCls + '" onclick="openTreeEdit(' + t.id + ')" title="点击编辑">';
+        html += '<span class="tn-sicon">' + sIcon + '</span>';
+        html += '<span class="tn-picon">' + pIcon + '</span>';
+        html += '<span class="tn-name">' + t.t + '</span>';
+        html += '<span class="tn-pg">' + t.pg + '%</span>';
+        html += '</div>';
+
+        // Subtasks inline
+        if (t.st && t.st.length > 0) {
+          for (var si = 0; si < t.st.length; si++) {
+            var st = t.st[si];
+            var ssIcon = st.s === '已完成' ? '✅' : (st.s === '进行中' ? '⏳' : '📋');
+            html += '<div class="tn-st' + (st.s === '已完成' ? ' tn-done' : '') + '">';
+            html += '<span class="tn-sicon">' + ssIcon + '</span>';
+            html += '<span class="tn-name">' + st.t + '</span>';
+            html += '</div>';
+          }
+        }
+
+        // Latest update
+        var lu = null;
+        if (t.updates && t.updates.length > 0) lu = t.updates[t.updates.length-1];
+        if (lu) {
+          html += '<div class="tn-upd">' + (lu.d || '') + ' ' + lu.t.substring(0,40) + '</div>';
         }
       }
-      var pct = catTotal > 0 ? Math.round(catDone/catTotal*100) : 0;
-
-      lines.push('');
-      lines.push('## ' + c + ' (' + catDone + '/' + catTotal + ' ' + pct + '%)');
-
-      for (var gi = 0; gi < gnames.length; gi++) {
-        var gn = gnames[gi];
-        var tasks = groups[gn];
-        tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
-
-        lines.push('### ' + gn + ' (' + tasks.length + ')');
-        for (var ti = 0; ti < tasks.length; ti++) {
-          var t = tasks[ti];
-          var icon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
-          var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
-          lines.push('- ' + icon + ' ' + pIcon + ' **ID:' + t.id + '** ' + t.t);
-          if (t.d) lines.push('  - 截止: ' + t.d);
-          // Subtasks
-          if (t.st && t.st.length > 0) {
-            for (var si = 0; si < t.st.length; si++) {
-              var st = t.st[si];
-              var sIcon = st.s === '已完成' ? '✅' : (st.s === '进行中' ? '⏳' : '📋');
-              lines.push('  - ' + sIcon + ' ' + st.t);
-            }
-          }
-          // Latest update
-          var lu = null;
-          if (t.updates && t.updates.length > 0) lu = t.updates[t.updates.length-1];
-          if (lu) lines.push('  - 📌 ' + lu.t.substring(0,30) + (lu.t.length>30?'...':''));
-        }
-      }
+      html += '</div>'; // tn-grp
     }
+    html += '</div>'; // tn-body
+    html += '</div>'; // tn-cat
+  }
 
-    var markdown = lines.join('\n');
-    document.getElementById('markmapContainer').innerHTML = '';
+  html += '<div style="text-align:center;padding:12px;color:#5a6078;font-size:11px">点击任意任务节点可编辑分组/优先级/状态</div>';
 
-    // Render markmap
-    var el = document.getElementById('markmapContainer');
-    try {
-      var mm = new markmap.Markmap(el, {
-        colorFreezeLevel: 2,
-        maxWidth: 300,
-        spacingVertical: 8,
-        spacingHorizontal: 15,
-        duration: 300,
-        zoom: true,
-        pan: true
-      });
-      mm.setData(markdown);
-      mm.render();
-      mmSvg = el.querySelector('svg');
-      // Add click handler
-      if (mmSvg) {
-        mmSvg.addEventListener('click', function(e) {
-          var textEl = e.target.closest('text');
-          if (!textEl) return;
-          var txt = textEl.textContent || '';
-          var idMatch = txt.match(/ID:(\d+)/);
-          if (idMatch) {
-            var tid = parseInt(idMatch[1]);
-            openTreeEdit(tid);
-          }
-        });
-      }
-      document.getElementById('syncStatus').textContent = '🌳 脑图已生成 (' + data.length + ' 项任务)';
-      document.getElementById('syncStatus').className = 'sync-badge ok';
-    } catch(e) {
-      document.getElementById('markmapContainer').innerHTML = '<div class="empty">脑图渲染失败: ' + e.message + '</div>';
-    }
-  });
+  document.getElementById('treeBox').innerHTML = html;
 }
 
-// Tree Edit Modal
+// Open/Create tree edit modal
+var treeEditId = null;
+
 function openTreeEdit(id) {
   treeEditId = id;
   var merged = getMergedTasks();
@@ -2505,7 +2502,7 @@ function openTreeEdit(id) {
   for (var i = 0; i < merged.length; i++) {
     if (merged[i].id === id) { t = merged[i]; break; }
   }
-  if (!t) return;
+  if (!t) { treeEditId = null; return; }
 
   document.getElementById('treeEditTitle').textContent = '✏️ ' + t.t;
 
@@ -2516,14 +2513,13 @@ function openTreeEdit(id) {
   }
   var grpSel = document.getElementById('te-g');
   grpSel.innerHTML = '<option value="">无</option>';
-  for (var g in groups) {
-    grpSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
+  for (var gname in groups) {
+    grpSel.innerHTML += '<option value="' + gname + '">' + gname + '</option>';
   }
   grpSel.value = t.g || '';
 
   document.getElementById('te-p').value = t.p || '中';
   document.getElementById('te-s').value = t.s || '待办';
-
   document.getElementById('treeEditMo').classList.add('show');
 }
 
@@ -2538,34 +2534,17 @@ function treeEditSave() {
   var cid = String(treeEditId);
   if (!changes[cid]) changes[cid] = {};
 
-  var g = document.getElementById('te-g').value;
-  var p = document.getElementById('te-p').value;
-  var s = document.getElementById('te-s').value;
-
-  // For new fields like g and p that aren't in the original changes format,
-  // we store them under special keys
-  if (g) changes[cid]._group = g;
-  if (p) changes[cid]._priority = p;
-  if (s) changes[cid].s = s;
-
-  // Also set pg if completed
-  if (s === '已完成') changes[cid].pg = 100;
-  else if (changes[cid].pg === 100 && s !== '已完成') changes[cid].pg = 0;
+  changes[cid]._group = document.getElementById('te-g').value;
+  changes[cid]._priority = document.getElementById('te-p').value;
+  changes[cid].s = document.getElementById('te-s').value;
+  if (changes[cid].s === '已完成') changes[cid].pg = 100;
 
   saveLocalChanges(changes);
   closeTreeEdit();
   updateSyncUI();
   doRender();
-  showToast('已更新任务 #' + treeEditId);
+  showToast('已更新 ✅');
 }
-
-// Override getMergedTasks to apply group/priority changes
-(function() {
-  var origGet = getMergedTasks;
-  if (origGet) {
-    // Can't easily override, so we modify the renderTree to handle this
-  }
-})();
 
 // ===== END TREE VIEW =====
 // ===== NEW: Add, Delete, Subtask Functions =====

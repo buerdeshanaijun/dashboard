@@ -2392,7 +2392,7 @@ var markmapLoaded = false;
 var mmSvg = null;
 var treeEditId = null;
 
-// ===== TREE VIEW (D3.js Visual Tree) =====
+// ===== TREE VIEW (Force-Directed Graph) =====
 var treeEditId = null;
 
 function loadD3(callback) {
@@ -2408,187 +2408,239 @@ function renderTree() {
     var data = getMergedTasks();
     var container = document.getElementById('treeBox');
     container.innerHTML = '';
-    container.style.cssText = 'width:100%;height:80vh;background:#151720;border-radius:8px;overflow:hidden';
+    container.style.cssText = 'width:100%;height:80vh;background:#0f1117;border-radius:8px;overflow:hidden;position:relative';
 
     if (data.length === 0) {
       container.innerHTML = '<div class="empty" style="padding:40px">暂无任务</div>';
       return;
     }
 
-    // Build tree: root → category → group → task
-    var treeData = { name: '📋 全部任务 (' + data.length + ')', children: [] };
+    var w = container.clientWidth || 900;
+    var h = Math.max(600, window.innerHeight * 0.75);
+    var cx = w / 2, cy = h / 2;
+
+    var svg = d3.select('#treeBox').append('svg')
+      .attr('width', w).attr('height', h)
+      .style('width', '100%').style('height', '100%')
+      .style('display', 'block').style('background', '#0f1117');
+
+    // Arrow marker for links
+    svg.append('defs').append('marker')
+      .attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
+      .attr('refX', 20).attr('refY', 0)
+      .attr('markerWidth', 6).attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#444');
+
+    // Build graph data
+    var nodes = [];
+    var links = [];
+    var nodeMap = {};
+    var idCounter = 0;
+
+    function addNode(name, type, taskData, parentId) {
+      var n = { id: ++idCounter, name: name, type: type, task: taskData || null };
+      nodes.push(n);
+      nodeMap[name + '_' + type] = n.id;
+      if (parentId) links.push({ source: parentId, target: n.id });
+      return n.id;
+    }
+
+    // Root
+    var rootId = addNode('📋 任务总览
+' + data.length + '项', 'root', null, null);
+
+    // Build category → group → task hierarchy
     var cats = {};
     for (var i = 0; i < data.length; i++) {
       var t = data[i];
-      var catName = t.c || '其他';
-      if (!cats[catName]) {
-        cats[catName] = { name: catName, children: [] };
-        treeData.children.push(cats[catName]);
-      }
+      var cat = t.c || '其他';
+      if (!cats[cat]) cats[cat] = {};
       var gname = t.g || '未分组';
-      var grp = null;
-      for (var gi = 0; gi < cats[catName].children.length; gi++) {
-        if (cats[catName].children[gi].name === gname) { grp = cats[catName].children[gi]; break; }
-      }
-      if (!grp) {
-        grp = { name: gname, children: [] };
-        cats[catName].children.push(grp);
-      }
-      var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
-      var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
-      grp.children.push({ id: t.id, name: sIcon + ' ' + pIcon + ' ' + t.t, s: t.s, p: t.p, pg: t.pg });
+      if (!cats[cat][gname]) cats[cat][gname] = [];
+      cats[cat][gname].push(t);
     }
 
-    var width = container.clientWidth || 900;
-    var height = Math.max(600, window.innerHeight * 0.75);
+    var catOrder = Object.keys(cats).sort();
+    for (var ci = 0; ci < catOrder.length; ci++) {
+      var catName = catOrder[ci];
+      var catId = addNode(catName, 'category', null, rootId);
+      var groups = cats[catName];
+      var gnames = Object.keys(groups).sort();
+      for (var gi = 0; gi < gnames.length; gi++) {
+        var grpName = gnames[gi];
+        var grpId = addNode(grpName, 'group', null, catId);
+        var tasks = groups[grpName];
+        tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
+        for (var ti = 0; ti < tasks.length; ti++) {
+          var t = tasks[ti];
+          var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
+          var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
+          var label = sIcon + ' ' + pIcon + ' ' + t.t;
+          if (label.length > 30) label = label.substring(0, 28) + '..';
+          addNode(label, 'task', t, grpId);
+        }
+      }
+    }
 
-    var svg = d3.select('#treeBox').append('svg')
-      .attr('width', width)
-      .attr('height', height)
-      .style('width', '100%')
-      .style('height', '100%')
-      .style('background', '#151720')
-      .style('display', 'block');
+    // Force simulation
+    var simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(function(d) {
+        if (d.target.type === 'task') return 100;
+        if (d.target.type === 'group') return 130;
+        return 160;
+      }).strength(0.4))
+      .force('charge', d3.forceManyBody().strength(function(d) {
+        if (d.type === 'root') return -800;
+        if (d.type === 'category') return -500;
+        if (d.type === 'group') return -300;
+        return -100;
+      }))
+      .force('center', d3.forceCenter(cx, cy))
+      .force('collision', d3.forceCollide().radius(function(d) {
+        if (d.type === 'task') return 35;
+        if (d.type === 'group') return 45;
+        if (d.type === 'category') return 60;
+        return 50;
+      }));
 
-    // Group with zoom
-    var g = svg.append('g');
-
-    var zoom = d3.zoom()
-      .scaleExtent([0.1, 4])
-      .on('zoom', function(event) { g.attr('transform', event.transform); });
-    svg.call(zoom);
-
-    // Build hierarchy - VERTICAL layout (top-to-bottom)
-    var root = d3.hierarchy(treeData);
-    var dx = 50;  // vertical spacing between levels
-    var dy = 160; // horizontal spacing
-
-    var treeLayout = d3.tree().nodeSize([dx, dy])
-      .separation(function(a, b) { return 1; });
-
-    treeLayout(root);
-
-    // Center the tree
-    var x0 = Infinity, x1 = -x0;
-    root.each(function(d) { if (d.x > x1) x1 = d.x; if (d.x < x0) x0 = d.x; });
-    var treeHeight = x1 - x0 + dx * 2;
-    var treeWidth = root.depth * dy + dy;
-
-    // Scale to fit if too large
-    var scale = Math.min(1, width / (treeWidth + 40), height / (treeHeight + 40));
-    var offsetX = 20;
-    var offsetY = 30;
-
-    // Apply initial transform
-    svg.call(zoom.transform, d3.zoomIdentity.translate(offsetX, offsetY).scale(scale));
-
-    // Draw links (curved)
-    g.append('g').selectAll('path')
-      .data(root.links())
-      .enter().append('path')
-      .attr('d', function(d) {
-        return 'M' + d.source.y + ',' + d.source.x +
-          'C' + (d.source.y + d.target.y) / 2 + ',' + d.source.x +
-          ' ' + (d.source.y + d.target.y) / 2 + ',' + d.target.x +
-          ' ' + d.target.y + ',' + d.target.x;
-      })
-      .attr('fill', 'none')
-      .attr('stroke', '#333')
-      .attr('stroke-width', 1.5)
-      .attr('opacity', 0.6);
+    // Draw links
+    var link = svg.append('g').selectAll('line')
+      .data(links).enter().append('line')
+      .attr('stroke', '#333').attr('stroke-width', 1.5)
+      .attr('stroke-opacity', 0.5);
 
     // Draw nodes
-    var node = g.append('g').selectAll('g')
-      .data(root.descendants())
-      .enter().append('g')
-      .attr('transform', function(d) { return 'translate(' + d.y + ',' + d.x + ')'; })
-      .attr('cursor', 'pointer');
+    var node = svg.append('g').selectAll('g')
+      .data(nodes).enter().append('g')
+      .attr('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', function(event, d) {
+          if (!event.active) simulation.alphaTarget(0.3).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on('drag', function(event, d) {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on('end', function(event, d) {
+          if (!event.active) simulation.alphaTarget(0);
+          // Optionally pin the node where dropped
+          // d.fx = d.x; d.fy = d.y; // Uncomment to keep nodes in place after drag
+          d.fx = null; d.fy = null; // Let physics settle
+        })
+      );
 
-    // Non-leaf nodes: circles
-    node.filter(function(d) { return !d.data.id; })
-      .append('circle')
-      .attr('r', 7)
-      .attr('fill', '#6c8cff')
-      .attr('stroke', '#4a6cdf')
-      .attr('stroke-width', 2);
+    // Root node: larger circle
+    node.filter(function(d) { return d.type === 'root'; })
+      .append('circle').attr('r', 28)
+      .attr('fill', 'url(#rootGrad)')
+      .attr('stroke', '#6c8cff').attr('stroke-width', 3);
+    
+    // Category nodes: medium circles
+    node.filter(function(d) { return d.type === 'category'; })
+      .append('circle').attr('r', 20)
+      .attr('fill', '#2a3a5a').attr('stroke', '#6c8cff').attr('stroke-width', 2);
 
-    // Leaf nodes (tasks): rounded rectangles
-    var taskNodes = node.filter(function(d) { return d.data.id; });
-    taskNodes.append('rect')
-      .attr('width', function(d) {
-        var len = (d.data.name || '').length * 8.5 + 24;
-        return Math.max(len, 70);
-      })
-      .attr('height', 26)
-      .attr('x', function(d) { return -((d.data.name || '').length * 8.5 + 24) / 2; })
-      .attr('y', -13)
-      .attr('rx', 6)
-      .attr('ry', 6)
+    // Group nodes: smaller circles
+    node.filter(function(d) { return d.type === 'group'; })
+      .append('circle').attr('r', 12)
+      .attr('fill', '#1f2937').attr('stroke', '#4a5568').attr('stroke-width', 1.5);
+
+    // Task nodes: rounded rects
+    var taskG = node.filter(function(d) { return d.type === 'task'; });
+    taskG.append('rect')
+      .attr('width', function(d) { return Math.max((d.name.length || 10) * 7 + 16, 60); })
+      .attr('height', 24)
+      .attr('x', function(d) { return -Math.max((d.name.length || 10) * 7 + 16, 60) / 2; })
+      .attr('y', -12)
+      .attr('rx', 12).attr('ry', 12)
       .attr('fill', function(d) {
-        if (d.data.s === '已完成') return '#1a2a1a';
-        if (d.data.s === '进行中') return '#1a2a2a';
-        if (d.data.s === '等待') return '#222';
+        if (!d.task) return '#1a1d28';
+        if (d.task.s === '已完成') return '#0d2818';
+        if (d.task.s === '进行中') return '#0d2828';
+        if (d.task.p === '紧急') return '#2d1010';
         return '#1a1d28';
       })
       .attr('stroke', function(d) {
-        if (d.data.s === '已完成') return '#2ed573';
-        if (d.data.s === '进行中') return '#2ed573';
-        if (d.data.p === '紧急') return '#ff4d6a';
-        if (d.data.p === '高') return '#ff9f43';
+        if (!d.task) return '#3a3f55';
+        if (d.task.s === '已完成') return '#2ed573';
+        if (d.task.s === '进行中') return '#2ed573';
+        if (d.task.p === '紧急') return '#ff4d6a';
+        if (d.task.p === '高') return '#ff9f43';
         return '#3a3f55';
       })
-      .attr('stroke-width', function(d) {
-        return (d.data.s === '进行中' || d.data.p === '紧急') ? 2 : 1;
+      .attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', function(d) {
+        return d.task && d.task.s === '等待' ? '4,2' : '0';
       });
 
-    taskNodes.append('text')
+    taskG.append('text')
       .attr('dy', 4)
       .attr('text-anchor', 'middle')
       .attr('fill', function(d) {
-        return d.data.s === '已完成' ? '#778ca3' : '#e8eaf0';
+        return d.task && d.task.s === '已完成' ? '#778ca3' : '#e8eaf0';
       })
-      .attr('font-size', '11px')
+      .attr('font-size', '10px')
       .attr('font-weight', '600')
-      .text(function(d) {
-        var name = d.data.name || '';
-        return name.length > 24 ? name.substring(0, 22) + '..' : name;
-      });
+      .text(function(d) { return d.name; });
 
-    // Non-leaf text labels
-    node.filter(function(d) { return !d.data.id; })
+    // Labels for non-task nodes
+    node.filter(function(d) { return d.type !== 'task'; })
       .append('text')
-      .attr('dy', -12)
+      .attr('dy', function(d) {
+        return d.type === 'root' ? '36' : (d.type === 'category' ? '32' : '24');
+      })
       .attr('text-anchor', 'middle')
-      .attr('fill', '#9ca3b8')
-      .attr('font-size', function(d) { return d.depth === 1 ? '13px' : '11px'; })
-      .attr('font-weight', function(d) { return d.depth === 1 ? '700' : '600'; })
-      .text(function(d) {
-        var n = d.data.name || '';
-        if (!d.children || d.children.length === 0) { n += ' (0)'; return n; }
-        var total = d.children.length;
-        var done = 0;
-        d.children.forEach(function(c) {
-          if (c.data.s === '已完成' || (c.children && c.children.every(function(cc) { return cc.data && cc.data.s === '已完成'; }))) done++;
-        });
-        return n + ' (' + done + '/' + total + ')';
-      });
+      .attr('fill', function(d) {
+        if (d.type === 'root') return '#6c8cff';
+        if (d.type === 'category') return '#a0b4e8';
+        return '#9ca3b8';
+      })
+      .attr('font-size', function(d) {
+        return d.type === 'root' ? '14px' : (d.type === 'category' ? '12px' : '10px');
+      })
+      .attr('font-weight', function(d) {
+        return d.type === 'root' ? '800' : (d.type === 'category' ? '700' : '500');
+      })
+      .text(function(d) { return d.name; });
 
-    // Click handler on task nodes
-    taskNodes.on('click', function(event, d) {
+    // Click to edit task
+    taskG.on('click', function(event, d) {
       event.stopPropagation();
-      if (d.data.id) openTreeEdit(d.data.id);
+      if (d.task && d.task.id) openTreeEdit(d.task.id);
     });
 
-    // Add legend
-    svg.append('text')
-      .attr('x', 10).attr('y', 18)
-      .attr('fill', '#555')
-      .attr('font-size', '10px')
-      .text('🖱️点击任务编辑  🔍滚轮缩放  🖱️拖拽平移');
+    // Hover effect on tasks
+    taskG.on('mouseenter', function() {
+      d3.select(this).select('rect').attr('stroke-width', 2.5);
+    }).on('mouseleave', function() {
+      d3.select(this).select('rect').attr('stroke-width', 1.5);
+    });
+
+    // Tick: update positions
+    simulation.on('tick', function() {
+      link.attr('x1', function(d) { return d.source.x; })
+        .attr('y1', function(d) { return d.source.y; })
+        .attr('x2', function(d) { return d.target.x; })
+        .attr('y2', function(d) { return d.target.y; });
+      node.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
+    });
+
+    // Gradient for root
+    svg.select('defs').append('radialGradient').attr('id', 'rootGrad')
+      .append('stop').attr('offset', '0%').attr('stop-color', '#4a6cdf');
+    svg.select('#rootGrad').append('stop').attr('offset', '100%').attr('stop-color', '#6c8cff');
+
+    // Legend
+    var legend = svg.append('g').attr('transform', 'translate(10, 14)');
+    legend.append('text').attr('fill', '#555').attr('font-size', '10px')
+      .text('🖱️拖拽节点  👆点击任务  🔍滚轮缩放');
   });
 }
 
-// Tree Edit Modal
+// Tree Edit Modal (same as before)
 function openTreeEdit(id) {
   treeEditId = id;
   var merged = getMergedTasks();

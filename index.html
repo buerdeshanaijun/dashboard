@@ -2457,15 +2457,17 @@ function renderTree() {
     // Root
     var rootId = addNode('📋 任务总览 (' + data.length + '项)', 'root', null, null);
 
-    // Build category → group → task hierarchy
-    var cats = {};
+    // Build parent → category → group → task hierarchy
+    var parents = {};
     for (var i = 0; i < data.length; i++) {
       var t = data[i];
+      var pname = t.p || '📦 其他';
+      if (!parents[pname]) parents[pname] = {};
       var cat = t.c || '其他';
-      if (!cats[cat]) cats[cat] = {};
+      if (!parents[pname][cat]) parents[pname][cat] = {};
       var gname = t.g || '未分组';
-      if (!cats[cat][gname]) cats[cat][gname] = [];
-      cats[cat][gname].push(t);
+      if (!parents[pname][cat][gname]) parents[pname][cat][gname] = [];
+      parents[pname][cat][gname].push(t);
     }
 
     var parentOrder = Object.keys(parents).sort(function(a,b){

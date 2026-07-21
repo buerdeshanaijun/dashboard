@@ -2373,19 +2373,25 @@ var treeEditId = null;
 
 function loadMarkmap(callback) {
   if (markmapLoaded) { if(callback) callback(); return; }
-  // Load markmap CSS
-  var link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/index.css';
-  document.head.appendChild(link);
-  // Load d3 + markmap
-  var script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/browser/index.js';
-  script.onload = function() {
-    markmapLoaded = true;
-    if(callback) callback();
+  // Load d3 first
+  var s1 = document.createElement('script');
+  s1.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
+  s1.onload = function() {
+    // Load markmap CSS
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/index.css';
+    document.head.appendChild(link);
+    // Load markmap
+    var s2 = document.createElement('script');
+    s2.src = 'https://cdn.jsdelivr.net/npm/markmap-view@0.17/dist/browser/index.js';
+    s2.onload = function() {
+      markmapLoaded = true;
+      if(callback) callback();
+    };
+    document.body.appendChild(s2);
   };
-  document.body.appendChild(script);
+  document.body.appendChild(s1);
 }
 
 function renderTree() {

@@ -309,12 +309,9 @@ body.batch-mode .tt{padding-right:30px}
 
 <div class="tabs" id="tabsBar">
   <div class="tab on" onclick="switchTab('kanban',this)">看板</div>
-  <div class="tab" onclick="switchTab('timeline',this)">时间线</div>
   <div class="tab" onclick="switchTab('gantt',this)">甘特图</div>
-  <div class="tab" onclick="switchTab('weekly',this)">周总结</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
-  <div class="tab" onclick="switchTab('tree',this)">🌳 脑图</div>
   <div class="tab" onclick="switchTab('all',this)">全部任务</div>
   <div class="tab" onclick="switchTab('done',this)">✓ 已完成</div>
 </div>
@@ -1356,6 +1353,7 @@ function renderAll(data) {
   html += '<tr style="border-bottom:2px solid #2a2e3f">';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8;width:30px">✓</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">任务</th>';
+  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">内容</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">分组</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">类别</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">优先级</th>';
@@ -1364,38 +1362,58 @@ function renderAll(data) {
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">进度</th>';
   html += '</tr>';
 
-  // Group by category, then by group within each category
-  var catGroups = {};
+  // Group by parent → category → group
+  var P_COLORS = {'🔬 科研项目':'#6c8cff','🏭 生产作业':'#ff9f43',
+                  '⚙️ 管理/安全':'#ff4d6a','👤 私人事务':'#a55eea','📦 其他':'#9ca3b8'};
+  var pOrder = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+  var parGroups = {};
   for (var i = 0; i < data.length; i++) {
-    var c = data[i].c;
-    if (!catGroups[c]) catGroups[c] = [];
-    catGroups[c].push(data[i]);
+    var p = data[i].p || '📦 其他';
+    if (!parGroups[p]) parGroups[p] = [];
+    parGroups[p].push(data[i]);
   }
-  var cats = Object.keys(catGroups).sort(function(a,b){
-    var aAct = 0, bAct = 0;
-    for (var i = 0; i < catGroups[a].length; i++) if (catGroups[a][i].s !== "已完成") aAct++;
-    for (var i = 0; i < catGroups[b].length; i++) if (catGroups[b][i].s !== "已完成") bAct++;
-    return bAct - aAct;
-  });
+  var pars = Object.keys(parGroups).sort(function(a,b){ return (pOrder[a]||9)-(pOrder[b]||9); });
 
-  var rowNum = 0;
-  for (var ci = 0; ci < cats.length; ci++) {
-    var c = cats[ci];
-    var tasks = catGroups[c];
-    // Group within category
-    var groups = {};
+  for (var pi = 0; pi < pars.length; pi++) {
+    var p = pars[pi];
+    var pCol = P_COLORS[p] || '#9ca3b8';
+    var tasks = parGroups[p];
+    // Group within parent: by category
+    var catGroups = {};
     for (var i = 0; i < tasks.length; i++) {
-      var gn = tasks[i].g || "其他";
-      if (!groups[gn]) groups[gn] = [];
-      groups[gn].push(tasks[i]);
+      var c = tasks[i].c;
+      if (!catGroups[c]) catGroups[c] = [];
+      catGroups[c].push(tasks[i]);
     }
-    var gnames = Object.keys(groups).sort();
+    var cats = Object.keys(catGroups).sort(function(a,b){
+      var aAct = 0, bAct = 0;
+      for (var i = 0; i < catGroups[a].length; i++) if (catGroups[a][i].s !== "已完成") aAct++;
+      for (var i = 0; i < catGroups[b].length; i++) if (catGroups[b][i].s !== "已完成") bAct++;
+      return bAct - aAct;
+    });
 
-    for (var gi = 0; gi < gnames.length; gi++) {
-      var gn = gnames[gi];
-      var grpTasks = groups[gn];
-      // Group header row
-      html += '<tr style="background:rgba(108,140,255,.06)"><td colspan="8" style="padding:5px 6px;font-size:11px;font-weight:700;color:#6c8cff">' + c + ' · ' + gn + ' (' + grpTasks.length + '项)</td></tr>';
+    for (var ci = 0; ci < cats.length; ci++) {
+      var c = cats[ci];
+      var cTasks = catGroups[c];
+      // Group within category
+      var groups = {};
+      for (var i = 0; i < cTasks.length; i++) {
+        var gn = cTasks[i].g || "其他";
+        if (!groups[gn]) groups[gn] = [];
+        groups[gn].push(cTasks[i]);
+      }
+      var gnames = Object.keys(groups).sort();
+
+      for (var gi = 0; gi < gnames.length; gi++) {
+        var gn = gnames[gi];
+        var grpTasks = groups[gn];
+        // Parent header row (once per parent)
+        var parHeader = (gi === 0 && ci === 0)
+          ? '<tr style="background:' + pCol + '22"><td colspan="9" style="padding:6px 6px;font-size:12px;font-weight:800;color:' + pCol + '">' + p + ' (' + tasks.length + '项)</td></tr>'
+          : '';
+        // Group header row
+        html += parHeader;
+        html += '<tr style="background:rgba(108,140,255,.06)"><td colspan="9" style="padding:5px 6px;font-size:11px;font-weight:700;color:#6c8cff">' + '　└ ' + c + ' · ' + gn + ' (' + grpTasks.length + '项)</td></tr>';
 
       for (var i = 0; i < grpTasks.length; i++) {
         var x = grpTasks[i];
@@ -1410,6 +1428,7 @@ function renderAll(data) {
         html += '<tr style="border-bottom:1px solid #2a2e3f;cursor:pointer' + (x._local ? ';background:rgba(255,159,67,.06)' : '') + '" onclick="openDetail(' + x.id + ')">';
         html += '<td style="padding:7px 6px;text-align:center">' + checkIcon + '</td>';
         html += '<td style="padding:7px 6px;font-weight:630;' + strike + '">' + x.t + localMark + '</td>';
+        html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8;max-width:300px;line-height:1.45;word-break:break-all;' + strike + '">' + (x.ds ? x.ds : '') + '</td>';
         html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8">' + gn + '</td>';
         html += '<td style="padding:7px 6px"><span class="bg ' + cc + '">' + x.c + '</span></td>';
         html += '<td style="padding:7px 6px"><span class="bg ' + pc + '">' + x.p + '</span></td>';
@@ -1419,6 +1438,7 @@ function renderAll(data) {
         html += '</tr>';
       }
     }
+  }
   }
   html += '</table></div>';
   document.getElementById("allbox").innerHTML = html;
@@ -2194,12 +2214,6 @@ function switchTab(name, tabEl) {
   if (name === "calendar") renderCalendar(getFiltered());
   if (name === "done") renderDone(getMergedTasks());
   if (name === "overview") renderOverview(getMergedTasks());
-  if (name === "tree") {
-    setTimeout(function(){ renderTree(); }, 100);
-  }
-  if (name === "weekly") {
-    setTimeout(function(){ renderTrendChart(getMergedTasks()); }, 50);
-  }
 }
 
 // Filter

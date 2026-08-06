@@ -308,12 +308,10 @@ body.batch-mode .tt{padding-right:30px}
 <div class="stats" id="stats"></div>
 
 <div class="tabs" id="tabsBar">
-  <div class="tab on" onclick="switchTab('kanban',this)">看板</div>
-  <div class="tab" onclick="switchTab('gantt',this)">甘特图</div>
+  <div class="tab" onclick="switchTab('gantt',this)" style="display:none">甘特图</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
-  <div class="tab" onclick="switchTab('all',this)">全部任务</div>
-  <div class="tab" onclick="switchTab('done',this)">✓ 已完成</div>
+  <div class="tab on" onclick="switchTab('all',this)">全部任务</div>
 </div>
 
 <div id="loadingArea" style="padding:40px 16px;text-align:center">
@@ -1036,7 +1034,7 @@ function loadWeeklySummaries(callback) {
 function hideLoading() {
   var el = document.getElementById("loadingArea");
   if (el) el.style.display = "none";
-  var kv = document.getElementById("v-kanban");
+  var kv = document.getElementById("v-all");
   kv.className = "vw on";
   kv.style.display = "";
 }
@@ -1354,9 +1352,6 @@ function renderAll(data) {
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8;width:30px">✓</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">任务</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">内容</th>';
-  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">分组</th>';
-  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">类别</th>';
-  html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">优先级</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">状态</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">截止</th>';
   html += '<th style="text-align:left;padding:7px 6px;color:#9ca3b8">进度</th>';
@@ -1373,6 +1368,20 @@ function renderAll(data) {
     parGroups[p].push(data[i]);
   }
   var pars = Object.keys(parGroups).sort(function(a,b){ return (pOrder[a]||9)-(pOrder[b]||9); });
+
+  // 截止日期高亮工具
+  function dueStyle(d) {
+    if (!d) return 'color:#9ca3b8';
+    var now = new Date(); now.setHours(0,0,0,0);
+    var parts = String(d).split('-');
+    if (parts.length < 3) return 'color:#9ca3b8';
+    var due = new Date(+parts[0], +parts[1]-1, +parts[2]);
+    var diff = Math.round((due - now) / 86400000);
+    if (diff < 0) return 'color:#ff4d6a;font-weight:700';   // 已过期
+    if (diff === 0) return 'color:#ff4d6a;font-weight:700'; // 今天
+    if (diff <= 3) return 'color:#fbbf24;font-weight:600';  // 3天内
+    return 'color:#9ca3b8';
+  }
 
   for (var pi = 0; pi < pars.length; pi++) {
     var p = pars[pi];
@@ -1407,35 +1416,54 @@ function renderAll(data) {
       for (var gi = 0; gi < gnames.length; gi++) {
         var gn = gnames[gi];
         var grpTasks = groups[gn];
+        var activeTasks = grpTasks.filter(function(t){ return t.s !== "已完成"; });
+        var doneTasks = grpTasks.filter(function(t){ return t.s === "已完成"; });
         // Parent header row (once per parent)
         var parHeader = (gi === 0 && ci === 0)
-          ? '<tr style="background:' + pCol + '22"><td colspan="9" style="padding:6px 6px;font-size:12px;font-weight:800;color:' + pCol + '">' + p + ' (' + tasks.length + '项)</td></tr>'
+          ? '<tr style="background:' + pCol + '22"><td colspan="6" style="padding:6px 6px;font-size:12px;font-weight:800;color:' + pCol + '">' + p + ' (' + tasks.length + '项)</td></tr>'
           : '';
         // Group header row
         html += parHeader;
-        html += '<tr style="background:rgba(108,140,255,.06)"><td colspan="9" style="padding:5px 6px;font-size:11px;font-weight:700;color:#6c8cff">' + '　└ ' + c + ' · ' + gn + ' (' + grpTasks.length + '项)</td></tr>';
+        html += '<tr style="background:rgba(108,140,255,.06)"><td colspan="6" style="padding:5px 6px;font-size:11px;font-weight:700;color:#6c8cff">' + '　└ ' + c + ' · ' + gn + ' (' + activeTasks.length + '项' + (doneTasks.length ? ' + ' + doneTasks.length + '✓' : '') + ')</td></tr>';
 
-      for (var i = 0; i < grpTasks.length; i++) {
-        var x = grpTasks[i];
+      for (var i = 0; i < activeTasks.length; i++) {
+        var x = activeTasks[i];
         var sc = sClr[x.s] || "#9ca3b8";
-        var pc = pCls[x.p] || "bm";
         var pg = pgColor(x.pg);
-        var strike = x.s === "已完成" ? "text-decoration:line-through;opacity:.55" : "";
-        var checkIcon = x.s === "已完成" ? '<span style="color:#2ed573;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">✓</span>' : '<span style="color:#3a3f55;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">○</span>';
+        var checkIcon = '<span style="color:#3a3f55;font-size:16px;cursor:pointer" onclick="event.stopPropagation();toggleComplete('+x.id+')">○</span>';
         var localMark = x._local ? ' <span class="blocal">本地</span>' : '';
-        var cc = x.c === "私人事务" ? "bp" : "bc";
 
         html += '<tr style="border-bottom:1px solid #2a2e3f;cursor:pointer' + (x._local ? ';background:rgba(255,159,67,.06)' : '') + '" onclick="openDetail(' + x.id + ')">';
         html += '<td style="padding:7px 6px;text-align:center">' + checkIcon + '</td>';
-        html += '<td style="padding:7px 6px;font-weight:630;' + strike + '">' + x.t + localMark + '</td>';
-        html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8;max-width:300px;line-height:1.45;word-break:break-all;' + strike + '">' + (x.ds ? x.ds : '') + '</td>';
-        html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8">' + gn + '</td>';
-        html += '<td style="padding:7px 6px"><span class="bg ' + cc + '">' + x.c + '</span></td>';
-        html += '<td style="padding:7px 6px"><span class="bg ' + pc + '">' + x.p + '</span></td>';
+        html += '<td style="padding:7px 6px;font-weight:630">' + x.t + localMark + '</td>';
+        html += '<td style="padding:7px 6px;font-size:10px;color:#9ca3b8;max-width:320px;line-height:1.45;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">' + (x.ds ? x.ds : '') + '</td>';
         html += '<td style="padding:7px 6px;color:' + sc + ';font-weight:630">' + x.s + '</td>';
-        html += '<td style="padding:7px 6px;color:#9ca3b8">' + x.d + '</td>';
+        html += '<td style="padding:7px 6px;' + dueStyle(x.d) + '">' + (x.d || '') + '</td>';
         html += '<td style="padding:7px 6px"><div class="pb" style="width:56px"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div></td>';
         html += '</tr>';
+      }
+
+      // Collapsible done section
+      if (doneTasks.length > 0) {
+        var doneId = 'donegrp_' + p.replace(/\s+/g,'') + '_' + c.replace(/\s+/g,'') + '_' + gn.replace(/\s+/g,'');
+        html += '<tr style="background:rgba(46,213,115,.04);cursor:pointer" onclick="event.stopPropagation();toggleDoneGroup(\'' + doneId + '\')">';
+        html += '<td style="padding:4px 6px;text-align:center;color:#2ed573;font-size:12px">▸</td>';
+        html += '<td colspan="5" style="padding:4px 6px;font-size:10.5px;color:#2ed573;opacity:.75">✓ 已完成 ' + doneTasks.length + ' 项（点击展开）</td>';
+        html += '</tr>';
+        html += '<tr id="' + doneId + '" style="display:none">';
+        html += '<td colspan="6" style="padding:0">';
+        html += '<table style="width:100%;border-collapse:collapse;font-size:10.5px">';
+        for (var j = 0; j < doneTasks.length; j++) {
+          var y = doneTasks[j];
+          html += '<tr style="border-bottom:1px solid #232736;cursor:pointer;opacity:.5" onclick="event.stopPropagation();openDetail(' + y.id + ')">';
+          html += '<td style="padding:4px 6px;text-align:center;width:30px;color:#2ed573">✓</td>';
+          html += '<td style="padding:4px 6px;text-decoration:line-through">' + y.t + '</td>';
+          html += '<td style="padding:4px 6px;color:#9ca3b8;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (y.ds ? y.ds : '') + '</td>';
+          html += '<td style="padding:4px 6px;color:#778ca3">' + (y.d || '') + '</td>';
+          html += '<td style="padding:4px 6px;width:56px"><div class="pb" style="width:56px"><div class="pf" style="width:' + y.pg + '%;background:#2ed573"></div></div></td>';
+          html += '</tr>';
+        }
+        html += '</table></td></tr>';
       }
     }
   }
@@ -1443,6 +1471,13 @@ function renderAll(data) {
   html += '</table></div>';
   document.getElementById("allbox").innerHTML = html;
 }
+
+// Toggle collapsed done group
+function toggleDoneGroup(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = (el.style.display === "none" || el.style.display === "") ? "" : "none";
+}
+
 
 // ===== Done-only view state =====
 var doneSortBy = "date";

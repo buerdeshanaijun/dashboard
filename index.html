@@ -29,6 +29,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .sc{background:#1a1d28;border-radius:10px;padding:10px;border:1px solid #2a2e3f;text-align:center}
 .sc .n{font-size:22px;font-weight:800}
 .sc .l{font-size:9px;color:#9ca3b8;margin-top:2px;letter-spacing:1px}
+.stats-aux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px 8px}
+.sa-cell{background:#1a1d28;border-radius:10px;padding:8px 6px;border:1px solid #2a2e3f;text-align:center;transition:all .15s}
+.sa-cell:hover{border-color:#6c8cff;background:#252a3a}
+.sa-cell.active{background:rgba(108,140,255,.15);border-color:#6c8cff}
+.sa-num{font-size:18px;font-weight:800;color:#6c8cff;line-height:1.2}
+.sa-lab{font-size:9px;color:#9ca3b8;margin-top:2px;letter-spacing:.5px}
+.sa-cell.overdue{border-color:rgba(255,77,106,.4)}
+.sa-cell.overdue .sa-num{color:#ff4d6a}
+.sa-cell.overdue.has-overdue{background:rgba(255,77,106,.08);animation:pulse 2s infinite}
 .tabs{display:flex;border-bottom:1px solid #2a2e3f;padding:0 16px}
 .tab{padding:12px 18px;font-size:14px;font-weight:600;color:#9ca3b8;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;-webkit-tap-highlight-color:rgba(108,140,255,.2)}
 .tab.on{color:#6c8cff;border-bottom-color:#6c8cff}
@@ -152,6 +161,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .sync-badge{font-size:10px;color:#778ca3;margin-top:4px}
 .sync-badge.ok{color:#2ed573}
 .sync-badge.err{color:#ff4d6a}
+/* Reminder chips in sub line */
+.rem-today{color:#ff9f43;font-weight:600}
+.rem-overdue{color:#5a6078;margin-left:2px}
+.rem-overdue.has-overdue{color:#ff4d6a;font-weight:700;animation:pulse 2s infinite}
 .search-wrap{display:flex;align-items:center;gap:6px;background:#1a1d28;border:1px solid #2a2e3f;border-radius:8px;padding:2px 10px;flex:1;min-width:120px;max-width:280px;transition:border-color .2s}
 .search-wrap:focus-within{border-color:#6c8cff}
 .search-wrap .sicon{color:#5a6078;font-size:14px;pointer-events:none}
@@ -275,7 +288,7 @@ body.batch-mode .tc{position:relative;padding-left:32px}
 body.batch-mode .tc-toggle{right:6px}
 body.batch-mode .tt{padding-right:30px}
 @media(max-width:768px){.ov-grid{grid-template-columns:1fr}}
-@media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}}
+@media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.stats-aux{grid-template-columns:repeat(3,1fr)}.sa-num{font-size:15px}}
 </style>
 </head>
 <body>
@@ -284,7 +297,7 @@ body.batch-mode .tt{padding-right:30px}
   <div style="display:flex;justify-content:space-between;align-items:start">
     <div>
       <h1>安恒序 &middot; 个人工作计划</h1>
-      <div class="sub">中海油能源发展 &middot; 钻采工程研究院 &middot; 储层改造研究所</div>
+      <div class="sub">中海油能源发展 &middot; 钻采工程研究院 &middot; 储层改造研究所 &middot; <span class="rem-today">今日 <b id="remToday">0</b> 项</span><span class="rem-overdue" id="remOverdueWrap"> &middot; 逾期 <b id="remOverdue">0</b> 项</span></div>
       <div class="sync-badge" id="syncStatus">加载中...</div>
     </div>
   </div>
@@ -306,9 +319,9 @@ body.batch-mode .tt{padding-right:30px}
 </div>
 
 <div class="stats" id="stats"></div>
+<div class="stats-aux" id="statsAux"></div>
 
 <div class="tabs" id="tabsBar">
-  <div class="tab" onclick="switchTab('gantt',this)" style="display:none">甘特图</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
   <div class="tab on" onclick="switchTab('all',this)">全部任务</div>
@@ -1231,6 +1244,19 @@ function getFiltered() {
     }
     data = result;
   }
+  // Date range filter (today / week / overdue)
+  if (dateRangeFilter !== "all") {
+    var r2 = [];
+    for (var i = 0; i < data.length; i++) {
+      var t = data[i];
+      if (!t.d) continue;
+      if (t.s === "已完成" || t.s === "已取消") continue;
+      if (dateRangeFilter === "today" && t.d === TODAY) r2.push(t);
+      else if (dateRangeFilter === "week" && t.d > TODAY && t.d <= addDays(TODAY, 7)) r2.push(t);
+      else if (dateRangeFilter === "overdue" && t.d < TODAY) r2.push(t);
+    }
+    data = r2;
+  }
   return data;
 }
 
@@ -1272,6 +1298,87 @@ function renderStats(data) {
     '<div class="sc"><div class="n" style="color:#ff9f43">' + todo + '</div><div class="l">待办</div></div>' +
     '<div class="sc"><div class="n" style="color:#778ca3">' + wait + '</div><div class="l">等待</div></div>' +
     '<div class="sc"><div class="n" style="color:#2ed573">' + done + '</div><div class="l">完成</div></div>';
+}
+
+// ===== REMINDER CHIPS (sub line) =====
+function renderReminders(allData) {
+  var todayCount = 0, overdueCount = 0, weekCount = 0;
+  for (var i = 0; i < allData.length; i++) {
+    var t = allData[i];
+    if (t.s === "已完成" || t.s === "已取消" || !t.d) continue;
+    if (t.d === TODAY) todayCount++;
+    if (t.d < TODAY) overdueCount++;
+    if (t.d > TODAY && t.d <= addDays(TODAY, 7)) weekCount++;
+  }
+  document.getElementById("remToday").textContent = todayCount;
+  document.getElementById("remOverdue").textContent = overdueCount;
+  var wrap = document.getElementById("remOverdueWrap");
+  if (overdueCount > 0) wrap.classList.add("has-overdue");
+  else wrap.classList.remove("has-overdue");
+  // also store weekCount on the element for later use
+  wrap.setAttribute("data-week", weekCount);
+}
+
+function addDays(dateStr, n) {
+  var parts = dateStr.split("-");
+  var d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  d.setDate(d.getDate() + n);
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, "0");
+  var dd = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + dd;
+}
+
+// ===== STATS AUX ROW (today / week / overdue) =====
+var dateRangeFilter = "all"; // "all" | "today" | "week" | "overdue"
+
+function renderStatsAux(allData) {
+  var todayCount = 0, weekCount = 0, overdueCount = 0;
+  for (var i = 0; i < allData.length; i++) {
+    var t = allData[i];
+    if (t.s === "已完成" || t.s === "已取消" || !t.d) continue;
+    if (t.d === TODAY) todayCount++;
+    if (t.d > TODAY && t.d <= addDays(TODAY, 7)) weekCount++;
+    if (t.d < TODAY) overdueCount++;
+  }
+  var html = '';
+  html += makeStatsCell("saToday", todayCount, "今日到期", "today", "📅");
+  html += makeStatsCell("saWeek", weekCount, "本周到期", "week", "🗓");
+  var overdueCellCls = "sa-cell" + (overdueCount > 0 ? " overdue has-overdue" : "");
+  html += '<div class="' + overdueCellCls + '" id="saOverdueCell" onclick="setDateRange(\'overdue\')" style="cursor:pointer">' +
+            '<div class="sa-num">' + overdueCount + '</div>' +
+            '<div class="sa-lab">⚠️ 逾期</div>' +
+          '</div>';
+  document.getElementById("statsAux").innerHTML = html;
+}
+
+function makeStatsCell(id, n, label, range, icon) {
+  var active = (dateRangeFilter === range) ? " active" : "";
+  return '<div class="sa-cell' + active + '" onclick="setDateRange(\'' + range + '\')" style="cursor:pointer">' +
+           '<div class="sa-num">' + n + '</div>' +
+           '<div class="sa-lab">' + icon + ' ' + label + '</div>' +
+         '</div>';
+}
+
+function setDateRange(range) {
+  if (dateRangeFilter === range) {
+    dateRangeFilter = "all";
+  } else {
+    dateRangeFilter = range;
+  }
+  // Switch to "all tasks" tab to make filter visible
+  var tabs = document.querySelectorAll(".tab");
+  var allTab = null;
+  for (var i = 0; i < tabs.length; i++) {
+    if (tabs[i].getAttribute("onclick") && tabs[i].getAttribute("onclick").indexOf("'all'") !== -1) {
+      allTab = tabs[i]; break;
+    }
+  }
+  if (allTab && !allTab.classList.contains("on")) {
+    allTab.click();
+  } else {
+    doRender();
+  }
 }
 
 // Render kanban board
@@ -1358,9 +1465,9 @@ function renderAll(data) {
   html += '</tr>';
 
   // Group by parent → category → group
-  var P_COLORS = {'🔬 科研项目':'#6c8cff','🏭 生产作业':'#ff9f43',
-                  '⚙️ 管理/安全':'#ff4d6a','👤 私人事务':'#a55eea','📦 其他':'#9ca3b8'};
-  var pOrder = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+  var P_COLORS = {'🔬 科研':'#6c8cff','🏭 生产':'#ff9f43',
+                  '📋 管理':'#ff4d6a','👤 私人':'#a55eea','🎓 培训':'#5fd6a8'};
+  var pOrder = {'🔬 科研':0,'🏭 生产':1,'📋 管理':2,'👤 私人':3,'🎓 培训':4};
   var parGroups = {};
   for (var i = 0; i < data.length; i++) {
     var p = data[i].p || '📦 其他';
@@ -2215,6 +2322,8 @@ function doRender() {
   var data = getFiltered();
   data.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
   renderStats(data);
+  renderReminders(getMergedTasks());
+  renderStatsAux(getMergedTasks());
   renderKanban(data);
   renderTimeline(data);
   renderGantt(data);

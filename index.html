@@ -200,6 +200,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .fl label .arr{display:inline-block;transition:transform .2s;margin-right:3px}
 @media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.hd h1{font-size:15px}.md{padding:16px}.kc{min-height:80px}}
 
+/* ===== LIGHT THEME OVERRIDES ===== */
+body[data-theme="light"]{background:#f5f6fa;color:#1a1d28}
+body[data-theme="light"] .hd{background:linear-gradient(135deg,#ffffff,#f0f2f8);border-bottom-color:#d8dce6}
+body[data-theme="light"] .hd .sub{color:#5a6078}
+body[data-theme="light"] .hd h1{background:linear-gradient(135deg,#4a6cdf,#7a4ed1);-webkit-background-clip:text;background-clip:text}
+body[data-theme="light"] .stats .sc,
+body[data-theme="light"] .stats-aux .sa-cell,
+body[data-theme="light"] .tc,
+body[data-theme="light"] .kc,
+body[data-theme="light"] .ov-card,
+body[data-theme="light"] .chart-wrap,
+body[data-theme="light"] .dbadge{background:#ffffff;border-color:#d8dce6;color:#1a1d28}
+body[data-theme="light"] .sc .l,
+body[data-theme="light"] .sa-lab{color:#5a6078}
+body[data-theme="light"] .tc .tt{color:#1a1d28}
+body[data-theme="light"] .tc .td2{color:#5a6078}
+body[data-theme="light"] .tc:hover{background:#f0f2f8}
+body[data-theme="light"] .tab{color:#5a6078}
+body[data-theme="light"] .tab.on{color:#4a6cdf;border-bottom-color:#4a6cdf}
+body[data-theme="light"] .fbar .fb{background:#ffffff;border-color:#d8dce6;color:#5a6078}
+body[data-theme="light"] .fbar .fb.on{background:rgba(74,108,223,.15);border-color:#4a6cdf;color:#4a6cdf}
+body[data-theme="light"] .search-wrap{background:#ffffff;border-color:#d8dce6}
+body[data-theme="light"] .search-wrap input{color:#1a1d28}
+body[data-theme="light"] .refresh-btn{background:rgba(46,213,115,.1);color:#1d8c4a;border-color:rgba(46,213,115,.4)}
+body[data-theme="light"] .sync-export-btn{background:rgba(255,159,67,.15);color:#c47820;border-color:rgba(255,159,67,.4)}
+body[data-theme="light"] .add-btn{background:rgba(46,213,115,.18);color:#1d8c4a;border-color:rgba(46,213,115,.5)}
+body[data-theme="light"] .more-btn{background:#ffffff;border-color:#d8dce6;color:#5a6078}
+body[data-theme="light"] .more-menu{background:#ffffff;border-color:#d8dce6;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+body[data-theme="light"] .more-item{color:#1a1d28}
+body[data-theme="light"] .more-item:hover{background:rgba(74,108,223,.12);color:#4a6cdf}
+body[data-theme="light"] .fl input,
+body[data-theme="light"] .fl textarea,
+body[data-theme="light"] .fl select{background:#ffffff;border-color:#d8dce6;color:#1a1d28}
+body[data-theme="light"] .md{background:#ffffff;border-color:#d8dce6;color:#1a1d28}
+body[data-theme="light"] .toast{background:#ffffff;border-color:#d8dce6;color:#1a1d28;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+body[data-theme="light"] .ft{color:#5a6078;border-top-color:#d8dce6}
+
 /* ===== NEW FEATURES ===== */
 .tc.overdue{border-color:rgba(255,77,106,.5)!important;box-shadow:0 0 0 1px rgba(255,77,106,.25),inset 0 0 0 1px rgba(255,77,106,.08)!important}
 .tc.overdue .tt::after{content:' ⚠️';font-size:9px;color:#ff4d6a;font-weight:400;margin-left:4px}
@@ -217,6 +254,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 /* Add task modal */
 .add-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(46,213,115,.13);color:#2ed573;border:1px solid rgba(46,213,115,.28);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
 .add-btn:active{background:rgba(46,213,115,.25)}
+/* More menu */
+.more-wrap{position:relative}
+.more-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(120,120,140,.12);color:#9ca3b8;border:1px solid rgba(120,120,140,.2);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}
+.more-btn:active{background:rgba(120,120,140,.25)}
+.more-menu{position:absolute;top:calc(100% + 6px);right:0;background:#1a1d28;border:1px solid #2a2e3f;border-radius:8px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.5);z-index:200;padding:4px 0}
+.more-item{padding:8px 14px;font-size:12px;color:#e8eaf0;cursor:pointer;display:flex;align-items:center;gap:6px}
+.more-item:hover{background:rgba(108,140,255,.15);color:#6c8cff}
 .fl input,.fl textarea,.fl select{width:100%;padding:8px 10px;background:#0f1117;border:1px solid #2a2e3f;border-radius:8px;color:#e8eaf0;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
 .fl input:focus,.fl textarea:focus,.fl select:focus{border-color:#6c8cff}
 .fl textarea{resize:vertical;min-height:60px}
@@ -310,11 +354,17 @@ body.batch-mode .tt{padding-right:30px}
     </div>
     <span class="refresh-btn" onclick="refreshData()">&#8635; 刷新 <span id="refreshTimer" style="font-size:9px;color:#5a6078;font-weight:400"></span></span>
     <span class="sync-export-btn" id="syncBtn" onclick="exportChanges()" title="导出本地修改，粘贴给Claw同步">&#128206; 同步变更 <span id="syncCount"></span></span>
-    <span class="sync-clear-btn" id="clearBtn" onclick="clearLocalChanges()" style="display:none">&#10005; 清除本地</span>
-    <span class="notif-badge" id="notifBtn" onclick="requestNotify()">&#128276; 通知</span>
-    <span class="refresh-btn" onclick="exportCSV()" title="导出任务为CSV文件">&#128229; 导出CSV</span>
-    <span class="sync-clear-btn" id="batchModeBtn" onclick="toggleBatchMode()" title="批量操作模式">&#128203; 批量</span>
     <span class="add-btn" onclick="showAddTaskMo()">&#10133; 新建</span>
+    <div class="more-wrap">
+      <span class="more-btn" id="moreBtn" onclick="toggleMoreMenu()">&#8943; 更多</span>
+      <div class="more-menu" id="moreMenu" style="display:none">
+        <div class="more-item" onclick="toggleTheme()">&#127769; 切换主题</div>
+        <div class="more-item" id="clearBtn2" onclick="clearLocalChanges()" style="display:none">&#10005; 清除本地修改</div>
+        <div class="more-item" onclick="toggleBatchMode()">&#128203; 批量操作</div>
+        <div class="more-item" onclick="requestNotify()">&#128276; 开启通知</div>
+        <div class="more-item" onclick="exportCSV()">&#128229; 导出 CSV</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -322,9 +372,10 @@ body.batch-mode .tt{padding-right:30px}
 <div class="stats-aux" id="statsAux"></div>
 
 <div class="tabs" id="tabsBar">
+  <div class="tab on" onclick="switchTab('all',this)">全部任务</div>
+  <div class="tab" onclick="switchTab('kanban',this)">看板</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
-  <div class="tab on" onclick="switchTab('all',this)">全部任务</div>
 </div>
 
 <div id="loadingArea" style="padding:40px 16px;text-align:center">
@@ -343,7 +394,7 @@ body.batch-mode .tt{padding-right:30px}
   <div class="kb">
     <div class="kc td"><h3>待办</h3><div id="kb-todo"></div></div>
     <div class="kc wt"><h3>等待中</h3><div id="kb-wait"></div></div>
-    <div class="kc dn" id="kb-done-col" style="cursor:pointer" onclick="document.querySelector('.tab:last-child').click()"><h3>已完成</h3><div id="kb-done-summary"></div></div>
+    <div class="kc dn" id="kb-done-col" style="cursor:pointer" onclick="switchTabByName('done')"><h3>已完成</h3><div id="kb-done-summary"></div></div>
   </div>
 </div>
 
@@ -1381,6 +1432,38 @@ function setDateRange(range) {
   }
 }
 
+// ===== MORE MENU =====
+function toggleMoreMenu() {
+  var menu = document.getElementById("moreMenu");
+  if (!menu) return;
+  menu.style.display = (menu.style.display === "none" || !menu.style.display) ? "block" : "none";
+}
+document.addEventListener("click", function(e) {
+  var menu = document.getElementById("moreMenu");
+  var btn = document.getElementById("moreBtn");
+  if (!menu || !btn) return;
+  if (e.target !== btn && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = "none";
+  }
+});
+
+// ===== THEME TOGGLE =====
+function toggleTheme() {
+  var body = document.body;
+  var cur = body.getAttribute("data-theme") || "dark";
+  var next = cur === "dark" ? "light" : "dark";
+  body.setAttribute("data-theme", next);
+  try { localStorage.setItem("dashboard_theme", next); } catch(e) {}
+}
+(function(){
+  try {
+    var saved = localStorage.getItem("dashboard_theme");
+    if (saved === "light" || saved === "dark") {
+      document.body.setAttribute("data-theme", saved);
+    }
+  } catch(e) {}
+})();
+
 // Render kanban board
 function renderKanban(data) {
   var tdList = [], wtList = [], dnList = [];
@@ -1390,7 +1473,7 @@ function renderKanban(data) {
     else if (data[i].s === "已完成") dnList.push(data[i]);
   }
 
-  function sortP(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);}
+  function sortP(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);}
   tdList.sort(sortP);
   wtList.sort(sortP);
   dnList.sort(sortP);
@@ -1441,7 +1524,7 @@ function renderTimeline(data) {
     html += '<div class="tldate ' + cls + '">' + label + '</div>';
 
     var items = groups[d];
-    items.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+    items.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
     for (var ji = 0; ji < items.length; ji++) {
       html += makeCard(items[ji]);
     }
@@ -1594,7 +1677,7 @@ function sortDone(type) {
   document.getElementById("doneSortDate").className = "fb" + (type === "date" ? " on" : "");
   document.getElementById("doneSortCat").className = "fb" + (type === "cat" ? " on" : "");
   var data = getFiltered();
-  data.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+  data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
   renderDone(data);
 }
 
@@ -1656,7 +1739,7 @@ function renderDone(data) {
       if (d === TODAY) dayLabel = d + " &#128205; 今天";
       html += '<div class="tg">';
       html += '<div class="tldate" style="color:#2ed573">' + dayLabel + ' <span style="font-size:10px;color:#9ca3b8;font-weight:400">(' + groups[d].length + ')</span></div>';
-      groups[d].sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+      groups[d].sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
       for (var ji = 0; ji < groups[d].length; ji++) {
         html += makeCard(groups[d][ji]);
       }
@@ -1720,7 +1803,7 @@ function renderOverview(data) {
     }
   }
 
-  var sortP = function(x){return pOrd[x.p] || 2;};
+  var sortP = function(x){return pOrd[x.pr] || 2;};
 
   var catOrder = Object.keys(cats).sort(function(a,b){
     var aActive = cats[a].total - cats[a].doneCount;
@@ -2025,7 +2108,7 @@ function renderWeekly(data) {
   }
 
   // Sort
-  var sortP = function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);};
+  var sortP = function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);};
   thisWeek.sort(sortP);
   overdue.sort(sortP);
   completedThisWeek.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
@@ -2320,7 +2403,7 @@ function showDateTasks(dateStr) {
 // Main render function
 function doRender() {
   var data = getFiltered();
-  data.sort(function(a,b){return(pOrd[a.p]||2)-(pOrd[b.p]||2);});
+  data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
   renderStats(data);
   renderReminders(getMergedTasks());
   renderStatsAux(getMergedTasks());
@@ -2358,6 +2441,18 @@ function switchTab(name, tabEl) {
   if (name === "calendar") renderCalendar(getFiltered());
   if (name === "done") renderDone(getMergedTasks());
   if (name === "overview") renderOverview(getMergedTasks());
+}
+
+// Switch tab by name (find the matching tab automatically)
+function switchTabByName(name) {
+  var tabs = document.querySelectorAll(".tab");
+  for (var i = 0; i < tabs.length; i++) {
+    var oc = tabs[i].getAttribute("onclick") || "";
+    if (oc.indexOf("'" + name + "'") !== -1) {
+      switchTab(name, tabs[i]);
+      return;
+    }
+  }
 }
 
 // Filter
@@ -2637,7 +2732,7 @@ function renderTree() {
 
     // Build graph data
     var nodes = [];
-    var P_COLORS = {'🔬 科研项目':'#6c8cff','🏭 生产作业':'#ff9f43','⚙️ 管理/安全':'#ff4d6a','👤 私人事务':'#a55eea','📦 其他':'#9ca3b8'};
+    var P_COLORS = {'🔬 科研':'#6c8cff','🏭 生产':'#ff9f43','📋 管理':'#ff4d6a','👤 私人':'#a55eea','🎓 培训':'#5fd6a8'};
     var links = [];
     var nodeMap = {};
     var idCounter = 0;
@@ -2667,7 +2762,7 @@ function renderTree() {
     }
 
     var parentOrder = Object.keys(parents).sort(function(a,b){
-      var order = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+      var order = {'🔬 科研':0,'🏭 生产':1,'📋 管理':2,'👤 私人':3,'🎓 培训':4};
       return (order[a]||9)-(order[b]||9);
     });
     for (var pi = 0; pi < parentOrder.length; pi++) {

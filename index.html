@@ -562,6 +562,9 @@ function getMergedTasks() {
     merged.push(nt);
   }
 
+  // 4. Expand repeat tasks (monthly: show current + next month instance)
+  merged = expandRepeats(merged, changes);
+
   return merged;
 }
 
@@ -589,9 +592,28 @@ function updateSyncUI() {
 function toggleComplete(taskId) {
   var changes = loadLocalChanges();
   var cid = String(taskId);
+  // For repeat pseudo-ids, find the template task
+  var realTaskId = taskId;
+  if (typeof taskId === "string" && taskId.indexOf("r") === 0) {
+    var mergedTasks = getMergedTasks();
+    var inst = null;
+    for (var i = 0; i < mergedTasks.length; i++) {
+      if (mergedTasks[i].id === taskId) { inst = mergedTasks[i]; break; }
+    }
+    if (inst && inst._template) {
+      // The pseudo id points to a repeat instance, use template id
+      // but the changes should be keyed by pseudo id
+    }
+  }
   var task = null;
+  var realId = realTaskId;
+  if (typeof realTaskId === "string" && realTaskId.charAt(0) === "r") {
+    // repeat instance: find template by parsing pseudo id like "r116-202608"
+    var m = realTaskId.match(/^r(\d+)-/);
+    if (m) realId = parseInt(m[1]);
+  }
   for (var i = 0; i < TASKS.length; i++) {
-    if (TASKS[i].id === taskId) { task = TASKS[i]; break; }
+    if (TASKS[i].id === realId) { task = TASKS[i]; break; }
   }
   if (!task) return;
 
@@ -602,11 +624,11 @@ function toggleComplete(taskId) {
   if (curTask.s === "已完成") {
     // Revert to "待办"
     changes[cid] = { s: "待办", pg: 0 };
-    showToast("已恢复为待办: " + task.t.substring(0,14)+"...");
+    showToast("已恢复为待办: " + (curTask.t || task.t).substring(0,14));
   } else {
     // Mark as completed
     changes[cid] = { s: "已完成", pg: 100 };
-    showToast("已完成: " + task.t.substring(0,14)+"...");
+    showToast("已完成: " + (curTask.t || task.t).substring(0,14));
   }
 
   saveLocalChanges(changes);
@@ -1176,6 +1198,7 @@ function makeCard(x) {
   var pg = pgColor(x.pg);
   var extraPg = (x.pg > 0 && x.pg < 100) ? '<span class="bg" style="background:rgba(255,159,67,.18);color:#ff9f43">' + x.pg + '%</span>' : '';
   var localBadge = x._local ? '<span class="blocal">本地修改</span>' : '';
+  var repeatBadge = x._repeat ? '<span class="bg" style="background:rgba(255,217,61,.18);color:#ffd93d" title="周期任务">🔁 周期</span>' : '';
   var toggleCls = done ? ' checked' : '';
 
   // Auto-progress from subtasks
@@ -1266,6 +1289,7 @@ function makeCard(x) {
       (x.g ? '<span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span>' : '') +
       '<span class="bg ' + cc + '">' + x.c + '</span>' +
       '<span class="bg bd">' + x.d + '</span>' +
+      repeatBadge +
       extraPg +
     '</div>' +
     '<div class="pb"><div class="pf" style="width:' + x.pg + '%;background:' + pg + '"></div></div>' +
@@ -1415,6 +1439,69 @@ function addDays(dateStr, n) {
   var m = String(d.getMonth() + 1).padStart(2, "0");
   var dd = String(d.getDate()).padStart(2, "0");
   return y + "-" + m + "-" + dd;
+}
+
+// ===== REPEAT TASK EXPANSION =====
+// Expand a task with `repeat` field into multiple instances (current + next).
+// Each instance has a pseudo-id like "r-116-202609" and can be marked done
+// independently via localStorage changes[pseudoId].
+function expandRepeats(tasks, changes) {
+  var result = [];
+  for (var i = 0; i < tasks.length; i++) {
+    var t = tasks[i];
+    if (!t.repeat || !t.repeat.freq) {
+      result.push(t);
+      continue;
+    }
+    if (t.repeat.freq === "monthly") {
+      var day = t.repeat.day || 25;
+      var todayParts = TODAY.split("-");
+      var curY = parseInt(todayParts[0]);
+      var curM = parseInt(todayParts[1]);
+      // Generate current month and next month instance
+      var months = [[curY, curM], [curY, curM + 1]];
+      for (var mi = 0; mi < months.length; mi++) {
+        var yy = months[mi][0];
+        var mm = months[mi][1];
+        // Normalize month overflow
+        while (mm > 12) { yy++; mm -= 12; }
+        while (mm < 1) { yy--; mm += 12; }
+        var dStr = yy + "-" + String(mm).padStart(2, "0") + "-" + String(Math.min(day, 28)).padStart(2, "0");
+        var pseudoId = "r" + t.id + "-" + yy + String(mm).padStart(2, "0");
+        // Skip if date is far in the past (more than 60 days)
+        if (dStr < addDays(TODAY, -60)) continue;
+        var inst = {};
+        for (var k in t) inst[k] = t[k];
+        inst.id = pseudoId;
+        inst.d = dStr;
+        inst._repeat = true;
+        inst._template = t.id;
+        inst._templateTitle = t.t;
+        // Title: replace template title with current cycle info
+        if (mm === curM) {
+          inst.t = t.t + " · 本月";
+        } else {
+          inst.t = t.t + " · 下月";
+        }
+        // Apply per-instance state from changes
+        if (changes && changes[pseudoId]) {
+          var ch = changes[pseudoId];
+          if (ch.s) inst.s = ch.s;
+          if (ch.pg !== undefined) inst.pg = ch.pg;
+        } else {
+          // Default: if instance date is in past, auto-mark completed
+          if (dStr < TODAY) {
+            inst.s = "已完成";
+            inst.pg = 100;
+          }
+        }
+        result.push(inst);
+      }
+    } else {
+      result.push(t);
+    }
+  }
+  return result;
 }
 
 // ===== STATS AUX ROW (today / week / overdue) =====
@@ -2671,7 +2758,24 @@ function openDetail(id) {
     upHtml += '</div></div>';
   }
 
-  // 关联任务 + 标签 渲染
+  // 关联任务 + 标签 + 重复规则 渲染
+  var repeatHtml = '';
+  if (x._repeat) {
+    var repFreq = x._repeat.freq === "monthly" ? "每月" : (x._repeat.freq === "weekly" ? "每周" : (x._repeat.freq === "daily" ? "每日" : x._repeat.freq));
+    var repDay = x._repeat.day ? (' ' + x._repeat.day + ' 日') : '';
+    var nextInst = addDays(TODAY, 30);
+    if (x._repeat.freq === "monthly") {
+      // 下次生成日：next month same day
+      var tp = TODAY.split("-");
+      var ny = parseInt(tp[1]) === 12 ? parseInt(tp[0]) + 1 : parseInt(tp[0]);
+      var nm = parseInt(tp[1]) === 12 ? 1 : parseInt(tp[1]) + 1;
+      nextInst = ny + "-" + String(nm).padStart(2,"0") + "-" + String(x._repeat.day || 25).padStart(2,"0");
+    }
+    repeatHtml = '<div class="fl"><label>🔁 周期任务</label><div class="vl" style="color:#ffd93d;font-weight:600">' +
+      repFreq + repDay + (x._template ? '（模板任务 #' + x._template + '）' : '') +
+      '<br><span style="font-size:10px;color:#9ca3b8;font-weight:400">当前实例 #' + x.id + ' · 下次生成 ' + nextInst + '</span>' +
+    '</div></div>';
+  }
   var relatedHtml = '';
   if (x.relatedTo && x.relatedTo.length) {
     var merged2 = getMergedTasks();
@@ -2703,7 +2807,7 @@ function openDetail(id) {
 
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml + relatedHtml + tagsHtml +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml + repeatHtml + relatedHtml + tagsHtml +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
       (x.g ? '<div><label>分组</label><div class="vl"><span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span></div></div>' : '') +

@@ -370,6 +370,8 @@ body.batch-mode .tt{padding-right:30px}
         <div class="more-item" onclick="requestNotify()">&#128276; 开启通知</div>
         <div class="more-item" onclick="exportCSV()">&#128229; 导出 CSV</div>
         <div class="more-item" onclick="importJSONPrompt()">&#128228; 导入 JSON 同步</div>
+        <div class="more-item" onclick="showReport('week')">&#128202; 周报</div>
+        <div class="more-item" onclick="showReport('month')">&#128202; 月报</div>
       </div>
     </div>
   </div>
@@ -496,6 +498,9 @@ body.batch-mode .tt{padding-right:30px}
     <button class="btn-primary" onclick="importJSONExec()">&#128229; 导入</button>
     <button class="btn-cancel" onclick="document.getElementById('importMo').classList.remove('show')">取消</button>
   </div>
+</div></div>
+
+<div class="mo" id="reportMo" onclick="if(event.target===this)document.getElementById('reportMo').classList.remove('show')"><div class="md" id="reportContent" onclick="event.stopPropagation()" style="max-width:640px;max-height:80vh;overflow-y:auto">
 </div></div>
 
 <script>
@@ -2647,6 +2652,119 @@ function importJSONPrompt() {
   // close more menu
   var mm = document.getElementById("moreMenu");
   if (mm) mm.style.display = "none";
+}
+
+// ===== REPORT (周报/月报) =====
+function showReport(period) {
+  var mo = document.getElementById("reportMo");
+  var content = document.getElementById("reportContent");
+  if (!mo || !content) return;
+  var now = new Date(TODAY);
+  var days = period === "week" ? 7 : 30;
+  var rangeStart = new Date(now);
+  rangeStart.setDate(rangeStart.getDate() - days + 1);
+  var rangeStartStr = rangeStart.toISOString().slice(0, 10);
+  var periodName = period === "week" ? "周报" : "月报";
+  var html = '<h2>&#128202; ' + periodName + '（' + rangeStartStr + ' ~ ' + TODAY + '）</h2>';
+  // Stats
+  var all = getMergedTasks();
+  var completedInRange = [];
+  var createdInRange = [];
+  var stillTodo = [];
+  var stillDoing = [];
+  for (var i = 0; i < all.length; i++) {
+    var t = all[i];
+    var inRange = false;
+    if (t.d && t.d >= rangeStartStr && t.d <= TODAY) inRange = true;
+    if (t.s === "已完成" && inRange) completedInRange.push(t);
+    if (t.updates) {
+      for (var ui = 0; ui < t.updates.length; ui++) {
+        if (t.updates[ui].d >= rangeStartStr && t.updates[ui].d <= TODAY) {
+          // Any update in range
+          if (t.s === "已完成") completedInRange.push(t);
+          break;
+        }
+      }
+    }
+    if (t.s === "待办" || t.s === "进行中" || t.s === "等待") {
+      if (t.d && t.d < TODAY) stillTodo.push(t);
+      else if (t.s === "进行中") stillDoing.push(t);
+    }
+  }
+  // Dedup
+  var seen = {};
+  completedInRange = completedInRange.filter(function(x){
+    if (seen[x.id]) return false;
+    seen[x.id] = 1;
+    return true;
+  });
+
+  html += '<div class="fl"><label>📊 统计</label><div class="vl">';
+  html += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin:6px 0">';
+  html += '<div class="ov-card" style="min-width:120px"><h3>周期内完成</h3><div class="ov-num" style="color:#2ed573">' + completedInRange.length + '</div></div>';
+  html += '<div class="ov-card" style="min-width:120px"><h3>逾期未完成</h3><div class="ov-num" style="color:#ff4d6a">' + stillTodo.length + '</div></div>';
+  html += '<div class="ov-card" style="min-width:120px"><h3>进行中</h3><div class="ov-num" style="color:#ff9f43">' + stillDoing.length + '</div></div>';
+  html += '</div></div></div>';
+
+  function listSection(title, items) {
+    if (items.length === 0) return '';
+    var s = '<div class="fl"><label>' + title + ' (' + items.length + '项)</label><div class="vl">';
+    for (var i = 0; i < items.length; i++) {
+      var t = items[i];
+      s += '<div style="padding:5px 8px;background:rgba(108,140,255,.08);border-radius:6px;margin-bottom:4px">';
+      s += '<span style="color:#6c8cff;font-weight:600">#' + t.id + '</span> ';
+      s += '<span>' + t.t + '</span>';
+      if (t.d) s += ' <span style="color:#5a6078;font-size:10px">(' + t.d + ')</span>';
+      s += '</div>';
+    }
+    s += '</div></div>';
+    return s;
+  }
+  html += listSection('✅ 周期内完成', completedInRange);
+  html += listSection('⚠️ 逾期未完成', stillTodo);
+  html += listSection('🔄 进行中', stillDoing);
+
+  // Plain-text copyable version
+  var plain = periodName + '（' + rangeStartStr + ' ~ ' + TODAY + '）\n\n';
+  plain += '完成 ' + completedInRange.length + ' 项 / 逾期 ' + stillTodo.length + ' 项 / 进行中 ' + stillDoing.length + ' 项\n\n';
+  if (completedInRange.length) {
+    plain += '【完成】\n';
+    for (var i = 0; i < completedInRange.length; i++) plain += '- #' + completedInRange[i].id + ' ' + completedInRange[i].t + '\n';
+    plain += '\n';
+  }
+  if (stillTodo.length) {
+    plain += '【逾期】\n';
+    for (var i = 0; i < stillTodo.length; i++) plain += '- #' + stillTodo[i].id + ' ' + stillTodo[i].t + '\n';
+    plain += '\n';
+  }
+  if (stillDoing.length) {
+    plain += '【进行中】\n';
+    for (var i = 0; i < stillDoing.length; i++) plain += '- #' + stillDoing[i].id + ' ' + stillDoing[i].t + '\n';
+  }
+  html += '<div class="fl"><label>📋 纯文本（可复制）</label><textarea id="reportTA" style="min-height:200px;font-family:Menlo,Consolas,monospace;font-size:11px;width:100%;padding:8px;background:#0f1117;border:1px solid #2a2e3f;border-radius:8px;color:#e8eaf0">' + plain.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea></div>';
+  html += '<div class="form-actions"><button class="btn-primary" onclick="copyReport()">📋 复制到剪贴板</button><button class="btn-cancel" onclick="document.getElementById(\'reportMo\').classList.remove(\'show\')">关闭</button></div>';
+
+  content.innerHTML = html;
+  mo.classList.add("show");
+  // close more menu
+  var mm = document.getElementById("moreMenu");
+  if (mm) mm.style.display = "none";
+}
+
+function copyReport() {
+  var ta = document.getElementById("reportTA");
+  if (!ta) return;
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showToast("已复制到剪贴板");
+  } catch(e) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function(){ showToast("已复制"); }, function(){ showToast("复制失败"); });
+    } else {
+      showToast("请手动复制");
+    }
+  }
 }
 
 function importJSONExec() {

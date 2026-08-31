@@ -230,6 +230,7 @@ body[data-theme="light"] .more-btn{background:#ffffff;border-color:#d8dce6;color
 body[data-theme="light"] .more-menu{background:#ffffff;border-color:#d8dce6;box-shadow:0 4px 16px rgba(0,0,0,.15)}
 body[data-theme="light"] .more-item{color:#1a1d28}
 body[data-theme="light"] .more-item:hover{background:rgba(74,108,223,.12);color:#4a6cdf}
+body[data-theme="light"] #importTA{background:#ffffff;border-color:#d8dce6;color:#1a1d28}
 body[data-theme="light"] .fl input,
 body[data-theme="light"] .fl textarea,
 body[data-theme="light"] .fl select{background:#ffffff;border-color:#d8dce6;color:#1a1d28}
@@ -363,6 +364,7 @@ body.batch-mode .tt{padding-right:30px}
         <div class="more-item" onclick="toggleBatchMode()">&#128203; 批量操作</div>
         <div class="more-item" onclick="requestNotify()">&#128276; 开启通知</div>
         <div class="more-item" onclick="exportCSV()">&#128229; 导出 CSV</div>
+        <div class="more-item" onclick="importJSONPrompt()">&#128228; 导入 JSON 同步</div>
       </div>
     </div>
   </div>
@@ -480,11 +482,24 @@ body.batch-mode .tt{padding-right:30px}
   <span id="updateTime"></span> <span id="deployStatus" style="font-size:10px;color:#5a6078"></span> <span id="dataAge" style="font-size:10px;color:#5a6078"></span>
 </div>
 
+<div class="mo" id="importMo" onclick="if(event.target===this)document.getElementById('importMo').classList.remove('show')"><div class="md" onclick="event.stopPropagation()" style="max-width:520px">
+  <h2>&#128229; 导入 JSON 同步</h2>
+  <div class="fl"><label>粘贴 Claw 同步的 JSON（支持 {changes, newTasks} 或纯数组格式）</label>
+    <textarea id="importTA" style="min-height:200px;font-family:Menlo,Consolas,monospace;font-size:11px" placeholder='{"changes":{"123":{"s":"已完成","pg":100}},"newTasks":[]}'></textarea>
+  </div>
+  <div class="form-actions">
+    <button class="btn-primary" onclick="importJSONExec()">&#128229; 导入</button>
+    <button class="btn-cancel" onclick="document.getElementById('importMo').classList.remove('show')">取消</button>
+  </div>
+</div></div>
+
 <script>
 // ===== GLOBALS =====
 var TASKS = [];
 var filterCat = "全部";
 var searchQuery = "";
+var tagFilter = ""; // empty = all
+var whoFilter = ""; // empty = all
 var TODAY = "";
 var DATA_VERSION = "";
 
@@ -1308,6 +1323,28 @@ function getFiltered() {
     }
     data = r2;
   }
+  // Tag filter
+  if (tagFilter) {
+    var r3 = [];
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].tags && data[i].tags.indexOf(tagFilter) !== -1) r3.push(data[i]);
+    }
+    data = r3;
+  }
+  // Who filter
+  if (whoFilter) {
+    var r4 = [];
+    for (var i = 0; i < data.length; i++) {
+      var t = data[i];
+      if (t.who && t.who === whoFilter) { r4.push(t); continue; }
+      if (t.st) {
+        for (var si = 0; si < t.st.length; si++) {
+          if (t.st[si].who === whoFilter) { r4.push(t); break; }
+        }
+      }
+    }
+    data = r4;
+  }
   return data;
 }
 
@@ -1330,7 +1367,7 @@ function getParentCats() {
     ps[p] = 1;
   }
   return Object.keys(ps).sort(function(a,b){
-    var order = {'🔬 科研项目':0,'🏭 生产作业':1,'⚙️ 管理/安全':2,'👤 私人事务':3,'📦 其他':4};
+    var order = {'🔬 科研':0,'🏭 生产':1,'📋 管理':2,'👤 私人':3,'🎓 培训':4};
     return (order[a]||9)-(order[b]||9);
   });
 }
@@ -1924,6 +1961,19 @@ function renderOverview(data) {
 function renderFilters() {
   var cats = getCategories();
   var pCats = getParentCats();
+  // Collect all tags and assignees from TASKS
+  var tagSet = {};
+  var whoSet = {};
+  for (var i = 0; i < TASKS.length; i++) {
+    if (TASKS[i].tags) for (var ti = 0; ti < TASKS[i].tags.length; ti++) tagSet[TASKS[i].tags[ti]] = 1;
+    // Collect from task + subtask who
+    if (TASKS[i].who) whoSet[TASKS[i].who] = 1;
+    if (TASKS[i].st) for (var si = 0; si < TASKS[i].st.length; si++) {
+      if (TASKS[i].st[si].who) whoSet[TASKS[i].st[si].who] = 1;
+    }
+  }
+  var tags = Object.keys(tagSet).sort();
+  var whos = Object.keys(whoSet).sort();
   var ids = ["fk","ft","fg","fa","fd"];
   for (var fi = 0; fi < ids.length; fi++) {
     var html = "";
@@ -1931,7 +1981,7 @@ function renderFilters() {
     for (var pi = 0; pi < pCats.length; pi++) {
       var pc = pCats[pi];
       var active = (filterCat === pc) ? " on" : "";
-      var short = pc.replace(/[🔬🏭⚙️👤📦]/,'').trim();
+      var short = pc.replace(/[🔬🏭⚙️👤📦🎓📋]/,'').trim();
       html += '<span class="fb' + active + '" onclick="setFilter(\'' + pc + '\')" title="' + pc + '">' + short + '</span>';
     }
     html += '<span style="color:#2a2e3f;margin:0 2px">|</span>';
@@ -1939,9 +1989,28 @@ function renderFilters() {
     for (var ci = 0; ci < cats.length; ci++) {
       var c = cats[ci];
       var active = (filterCat === c) ? " on" : "";
-      // Show short form: just the category name without parent
       var shortName = c.indexOf(' › ') > 0 ? c.split(' › ')[1] : c;
       html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')" title="' + c + '">' + shortName + '</span>';
+    }
+    // Tag filter chips
+    if (tags.length > 0) {
+      html += '<span style="color:#2a2e3f;margin:0 4px 0 8px">|</span>';
+      html += '<span style="font-size:10px;color:#5a6078;margin-right:4px">🏷️</span>';
+      for (var tgi = 0; tgi < tags.length; tgi++) {
+        var tg = tags[tgi];
+        var tagActive = (tagFilter === tg) ? " on" : "";
+        html += '<span class="fb' + tagActive + '" onclick="setTagFilter(\'' + tg + '\')" style="background:rgba(255,217,61,.12);color:#ffd93d" title="标签：' + tg + '">#' + tg + '</span>';
+      }
+    }
+    // Who filter chips
+    if (whos.length > 0) {
+      html += '<span style="color:#2a2e3f;margin:0 4px 0 8px">|</span>';
+      html += '<span style="font-size:10px;color:#5a6078;margin-right:4px">👤</span>';
+      for (var wi = 0; wi < whos.length; wi++) {
+        var w = whos[wi];
+        var wActive = (whoFilter === w) ? " on" : "";
+        html += '<span class="fb' + wActive + '" onclick="setWhoFilter(\'' + w + '\')" style="background:rgba(165,94,234,.12);color:#a55eea" title="负责人：' + w + '">' + w + '</span>';
+      }
     }
     document.getElementById(ids[fi]).innerHTML = html;
   }
@@ -2461,6 +2530,73 @@ function setFilter(cat) {
   doRender();
 }
 
+function setTagFilter(tag) {
+  tagFilter = (tagFilter === tag) ? "" : tag;
+  doRender();
+}
+
+function setWhoFilter(w) {
+  whoFilter = (whoFilter === w) ? "" : w;
+  doRender();
+}
+
+// ===== IMPORT JSON =====
+function importJSONPrompt() {
+  var mo = document.getElementById("importMo");
+  var ta = document.getElementById("importTA");
+  if (ta) ta.value = "";
+  if (mo) mo.classList.add("show");
+  // close more menu
+  var mm = document.getElementById("moreMenu");
+  if (mm) mm.style.display = "none";
+}
+
+function importJSONExec() {
+  var ta = document.getElementById("importTA");
+  if (!ta) return;
+  var text = ta.value.trim();
+  if (!text) { showToast("请粘贴 JSON"); return; }
+  try {
+    var parsed = JSON.parse(text);
+    // Support two shapes: {changes, newTasks} (from exportChanges) or direct array
+    var changes = null, newTasks = null;
+    if (parsed.changes || parsed.newTasks) {
+      changes = parsed.changes || {};
+      newTasks = parsed.newTasks || [];
+    } else if (Array.isArray(parsed)) {
+      // treat as newTasks
+      newTasks = parsed;
+    } else {
+      showToast("JSON 格式不对（需要 {changes, newTasks} 或数组）");
+      return;
+    }
+    // Merge into localStorage
+    var existingChanges = loadLocalChanges();
+    var existingNew = loadNewTasks();
+    var merged = 0;
+    for (var cid in changes) {
+      existingChanges[cid] = changes[cid];
+      merged++;
+    }
+    for (var ni = 0; ni < newTasks.length; ni++) {
+      // avoid dup by id
+      var hasId = false;
+      for (var ei = 0; ei < existingNew.length; ei++) {
+        if (existingNew[ei].id === newTasks[ni].id) { hasId = true; break; }
+      }
+      if (!hasId) existingNew.push(newTasks[ni]);
+    }
+    saveLocalChanges(existingChanges);
+    saveNewTasks(existingNew);
+    updateSyncUI();
+    doRender();
+    document.getElementById("importMo").classList.remove("show");
+    showToast("已导入 " + merged + " 条变更 + " + newTasks.length + " 条新任务");
+  } catch (e) {
+    showToast("JSON 解析失败：" + e.message);
+  }
+}
+
 // Toggle subtask expand/collapse
 function toggleSub(id) {
   var w = document.getElementById('stw-' + id);
@@ -2535,9 +2671,39 @@ function openDetail(id) {
     upHtml += '</div></div>';
   }
 
+  // 关联任务 + 标签 渲染
+  var relatedHtml = '';
+  if (x.relatedTo && x.relatedTo.length) {
+    var merged2 = getMergedTasks();
+    var relItems = '';
+    for (var ri = 0; ri < x.relatedTo.length; ri++) {
+      var rid = x.relatedTo[ri];
+      for (var mi = 0; mi < merged2.length; mi++) {
+        if (merged2[mi].id === rid) {
+          var sColor = merged2[mi].s === "已完成" ? "#2ed573" : (merged2[mi].s === "等待" ? "#778ca3" : "#ff9f43");
+          relItems += '<div style="padding:5px 8px;background:rgba(108,140,255,.08);border-radius:6px;margin-bottom:4px;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="closeMo();openDetail(' + rid + ')">' +
+            '<span style="color:#6c8cff;font-weight:600">#' + rid + '</span>' +
+            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + merged2[mi].t + '</span>' +
+            '<span style="font-size:9px;color:' + sColor + '">' + merged2[mi].s + '</span>' +
+          '</div>';
+          break;
+        }
+      }
+    }
+    relatedHtml = '<div class="fl"><label>🔗 关联任务 (' + x.relatedTo.length + '项)</label><div class="vl">' + relItems + '</div></div>';
+  }
+  var tagsHtml = '';
+  if (x.tags && x.tags.length) {
+    var tagItems = '';
+    for (var ti = 0; ti < x.tags.length; ti++) {
+      tagItems += '<span style="display:inline-block;background:rgba(255,217,61,.15);color:#ffd93d;padding:2px 8px;border-radius:10px;font-size:10px;margin-right:4px;margin-bottom:2px">#' + x.tags[ti] + '</span>';
+    }
+    tagsHtml = '<div class="fl"><label>🏷️ 标签</label><div class="vl" style="display:flex;flex-wrap:wrap;gap:2px">' + tagItems + '</div></div>';
+  }
+
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml + relatedHtml + tagsHtml +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
       (x.g ? '<div><label>分组</label><div class="vl"><span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span></div></div>' : '') +

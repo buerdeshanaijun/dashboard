@@ -54,6 +54,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .kc.dn h3{color:#2ed573;border-color:#2ed573}
 .tc{background:#1a1d28;border-radius:8px;padding:11px;margin-bottom:7px;border:1px solid #2a2e3f;cursor:pointer;position:relative;transition:background .15s}
 .tc:active{background:#252838}
+.tc.dragging{opacity:.4;transform:scale(.98)}
+.tc.drag-over-top{border-top:2px solid #6c8cff !important}
+.tc.drag-over-bottom{border-bottom:2px solid #6c8cff !important}
+.tc[draggable="true"]{cursor:grab}
+.tc[draggable="true"]:active{cursor:grabbing}
 .tc.done{opacity:.55}
 .tc.done .tt{text-decoration:line-through;color:#778ca3}
 .tc.local-mod{border-color:rgba(255,159,67,.5);box-shadow:inset 0 0 0 1px rgba(255,159,67,.15)}
@@ -1277,7 +1282,7 @@ function makeCard(x) {
 
   var cardTitle = sq ? titled : x.t;
 
-  return '<div class="tc' + (done ? ' done' : '') + overdueCls + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')">' +
+  return '<div class="tc' + (done ? ' done' : '') + overdueCls + (x._local ? ' local-mod' : '') + '" onclick="openDetail(' + x.id + ')" draggable="true" data-task-id="' + x.id + '" ondragstart="dragStartHandler(event)" ondragover="dragOverHandler(event)" ondragleave="dragLeaveHandler(event)" ondrop="dropHandler(event)" ondragend="dragEndHandler(event)">' +
     selectHtml +
     '<button class="tc-del" onclick="event.stopPropagation();deleteTask(' + x.id + ')" title="删除任务">&#10005;</button>' +
     '<button class="tc-toggle' + toggleCls + '" onclick="event.stopPropagation();toggleComplete(' + x.id + ')" title="' + (done ? '点击恢复待办' : '点击标记完成') + '">' + (done ? '✓' : '') + '</button>' +
@@ -2559,7 +2564,13 @@ function showDateTasks(dateStr) {
 // Main render function
 function doRender() {
   var data = getFiltered();
-  data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
+  // If user has manually reordered tasks, use that; otherwise sort by priority
+  var userOrder = loadTaskOrder();
+  if (userOrder.length > 0) {
+    data = applyTaskOrder(data);
+  } else {
+    data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
+  }
   renderStats(data);
   renderReminders(getMergedTasks());
   renderStatsAux(getMergedTasks());
@@ -3375,8 +3386,125 @@ function deleteTask(id) {
   showToast("已删除: " + t.t);
 }
 
+// ===== DRAG & DROP REORDER =====
+function loadTaskOrder() {
+  try { return JSON.parse(localStorage.getItem("dashboard_taskorder_v1") || "[]"); } catch(e) { return []; }
+}
+function saveTaskOrder(order) {
+  try { localStorage.setItem("dashboard_taskorder_v1", JSON.stringify(order)); } catch(e) {}
+}
+function reorderTasks(draggedId, targetId, position) {
+  // position: 'before' or 'after'
+  var order = loadTaskOrder();
+  // Build a unified list of task IDs (in current sort)
+  // If order is empty, build from current data
+  // Otherwise, just modify the order array
+  var all = getMergedTasks();
+  // Make sure all tasks are in order array
+  var orderSet = {};
+  for (var i = 0; i < order.length; i++) orderSet[order[i]] = 1;
+  for (var i = 0; i < all.length; i++) {
+    if (!orderSet[all[i].id]) order.push(all[i].id);
+  }
+  // Remove dragged from current position
+  var draggedIdx = -1;
+  for (var i = 0; i < order.length; i++) {
+    if (String(order[i]) === String(draggedId)) { draggedIdx = i; break; }
+  }
+  if (draggedIdx >= 0) order.splice(draggedIdx, 1);
+  // Find target's new position
+  var targetIdx = -1;
+  for (var i = 0; i < order.length; i++) {
+    if (String(order[i]) === String(targetId)) { targetIdx = i; break; }
+  }
+  if (targetIdx < 0) {
+    // Target not in order, append
+    order.push(draggedId);
+  } else {
+    var insertAt = position === "before" ? targetIdx : targetIdx + 1;
+    order.splice(insertAt, 0, draggedId);
+  }
+  saveTaskOrder(order);
+}
+// Apply saved order to a data array (preserving items not in order)
+function applyTaskOrder(tasks) {
+  var order = loadTaskOrder();
+  if (order.length === 0) return tasks;
+  var byId = {};
+  for (var i = 0; i < tasks.length; i++) byId[String(tasks[i].id)] = tasks[i];
+  var ordered = [];
+  var seen = {};
+  for (var i = 0; i < order.length; i++) {
+    var id = String(order[i]);
+    if (byId[id] && !seen[id]) {
+      ordered.push(byId[id]);
+      seen[id] = 1;
+    }
+  }
+  // Append any new tasks not in order
+  for (var i = 0; i < tasks.length; i++) {
+    if (!seen[String(tasks[i].id)]) ordered.push(tasks[i]);
+  }
+  return ordered;
+}
+
+// Drag handlers
+var dragSrcId = null;
+function dragStartHandler(e) {
+  e.stopPropagation();
+  var el = e.currentTarget;
+  dragSrcId = el.getAttribute("data-task-id");
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragSrcId);
+  }
+  el.classList.add("dragging");
+}
+function dragOverHandler(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+  var el = e.currentTarget;
+  if (el.getAttribute("data-task-id") === dragSrcId) return;
+  // Determine position (before/after) based on mouse Y vs midpoint
+  var rect = el.getBoundingClientRect();
+  var before = (e.clientY - rect.top) < rect.height / 2;
+  el.classList.remove("drag-over-top", "drag-over-bottom");
+  el.classList.add(before ? "drag-over-top" : "drag-over-bottom");
+}
+function dragLeaveHandler(e) {
+  e.stopPropagation();
+  var el = e.currentTarget;
+  el.classList.remove("drag-over-top", "drag-over-bottom");
+}
+function dropHandler(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var el = e.currentTarget;
+  var targetId = el.getAttribute("data-task-id");
+  if (!dragSrcId || targetId === dragSrcId) return;
+  var rect = el.getBoundingClientRect();
+  var before = (e.clientY - rect.top) < rect.height / 2;
+  reorderTasks(dragSrcId, targetId, before ? "before" : "after");
+  el.classList.remove("drag-over-top", "drag-over-bottom");
+  showToast("已调整顺序");
+  doRender();
+}
+function dragEndHandler(e) {
+  e.stopPropagation();
+  // Clear all drag styles
+  var els = document.querySelectorAll(".tc.dragging, .tc.drag-over-top, .tc.drag-over-bottom");
+  for (var i = 0; i < els.length; i++) {
+    els[i].classList.remove("dragging", "drag-over-top", "drag-over-bottom");
+  }
+  dragSrcId = null;
+}
+
 // Toggle subtask: 待办 → 进行中 → 已完成 → 待办
 function toggleSubtask(taskId, stIdx) {
+  var changes = loadLocalChanges();
+  var cid = String(taskId);
+  // (body kept as-is)
   var changes = loadLocalChanges();
   var cid = String(taskId);
   if (!changes[cid]) changes[cid] = {};

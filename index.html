@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <title>安恒序 · 个人工作计划</title>
 <style>
-/* Last sync: 2026-08-31 */
+/* Last sync: 2026-09-03 (banner 改友好提示) */
 
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#0f1117;color:#e8eaf0;min-height:100vh;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
@@ -342,18 +342,18 @@ body.batch-mode .tt{padding-right:30px}
 @media(max-width:768px){.ov-grid{grid-template-columns:1fr}}
 @media(max-width:480px){.stats{grid-template-columns:repeat(2,1fr)}.kb{grid-template-columns:1fr}.stats-aux{grid-template-columns:repeat(3,1fr)}.sa-num{font-size:15px}}
 
-/* === 入口迁移提示 banner (2026-09-03) === */
-.entry-banner{background:linear-gradient(135deg,#3a2e15,#5a4318);border-bottom:1px solid #ff9f43;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px}
+/* === 入口信息 banner (2026-09-03) === */
+.entry-banner{background:linear-gradient(135deg,#1a2540,#243056);border-bottom:1px solid #6c8cff;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px}
 .entry-banner.hidden{display:none}
 .entry-banner .eb-icon{font-size:18px;line-height:1;flex-shrink:0}
-.entry-banner .eb-text{flex:1;min-width:240px;color:#f0d8a8;line-height:1.5}
-.entry-banner .eb-text b{color:#ffb866;font-weight:700}
-.entry-banner .eb-text code{background:rgba(0,0,0,.35);color:#ffd29a;padding:3px 8px;border-radius:4px;font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px;display:inline-block;word-break:break-all;cursor:pointer;border:1px solid rgba(255,159,67,.3)}
-.entry-banner .eb-text code:hover{background:rgba(255,159,67,.18);border-color:#ff9f43}
-.entry-banner .eb-text code:active{background:rgba(255,159,67,.3)}
+.entry-banner .eb-text{flex:1;min-width:240px;color:#cdd6f4;line-height:1.5}
+.entry-banner .eb-text b{color:#a5b9ff;font-weight:700}
+.entry-banner .eb-text code{background:rgba(0,0,0,.35);color:#d6e1ff;padding:3px 8px;border-radius:4px;font-family:ui-monospace,"Cascadia Code","Consolas",monospace;font-size:11px;display:inline-block;word-break:break-all;cursor:pointer;border:1px solid rgba(108,140,255,.3)}
+.entry-banner .eb-text code:hover{background:rgba(108,140,255,.18);border-color:#6c8cff}
+.entry-banner .eb-text code:active{background:rgba(108,140,255,.3)}
 .entry-banner .eb-text .eb-hint{font-size:10px;color:#9ca3b8;margin-top:3px;display:block}
-.entry-banner .eb-close{background:rgba(255,159,67,.15);border:1px solid rgba(255,159,67,.3);color:#ffb866;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0}
-.entry-banner .eb-close:hover{background:rgba(255,159,67,.25)}
+.entry-banner .eb-close{background:rgba(108,140,255,.12);border:1px solid rgba(108,140,255,.25);color:#a5b9ff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;flex-shrink:0}
+.entry-banner .eb-close:hover{background:rgba(108,140,255,.22)}
 .entry-banner .eb-toast{font-size:10px;color:#2ed573;margin-left:6px;opacity:0;transition:opacity .3s}
 .entry-banner .eb-toast.show{opacity:1}
 </style>
@@ -361,12 +361,12 @@ body.batch-mode .tt{padding-right:30px}
 <body>
 
 <div class="entry-banner" id="entryBanner">
-  <span class="eb-icon">⚠️</span>
+  <span class="eb-icon">🔗</span>
   <div class="eb-text">
-    <b>网络到 github.io 不可达，主访问入口已迁移 ↓</b>（仓库、代码、数据都没变，只是换个 CDN 镜像）
-    <br><code id="entryUrl" onclick="copyEntryUrl()">https://cdn.jsdelivr.net/gh/buerdeshanaijun/dashboard@main/</code>
+    <b>仪表盘主入口（请收藏）</b>
+    <br><code id="entryUrl" onclick="copyEntryUrl()">https://buerdeshanaijun.github.io/dashboard/</code>
     <span class="eb-toast" id="entryToast">已复制 ✓</span>
-    <span class="eb-hint">点击上方链接复制书签 · 旧地址 buerdeshanaijun.github.io/dashboard 在你网络下不通，已弃用</span>
+    <span class="eb-hint">若主入口卡顿或刷新不出数据，可用备选镜像：<code style="background:transparent;border:0;padding:0;color:#ffd29a;cursor:pointer" onclick="copyAltUrl()">https://cdn.jsdelivr.net/gh/buerdeshanaijun/dashboard@main/index.html</code>（浏览器可能直接展示源码，右键"另存为"或拷 URL）</span>
   </div>
   <button class="eb-close" onclick="closeEntryBanner()">不再提示</button>
 </div>
@@ -532,26 +532,31 @@ body.batch-mode .tt{padding-right:30px}
 </div></div>
 
 <script>
-/* Last sync: 2026-09-03 (entry banner) */
+/* Last sync: 2026-09-03 (banner 改友好提示) */
 
 // ===== ENTRY BANNER =====
 (function(){
   try {
-    if (localStorage.getItem('entryBannerDismissed_2026_09_03') === '1') {
+    if (localStorage.getItem('entryBannerDismissed_2026_09_03_v2') === '1') {
       var el = document.getElementById('entryBanner');
       if (el) el.classList.add('hidden');
     }
   } catch(e){}
 })();
 function closeEntryBanner(){
-  try { localStorage.setItem('entryBannerDismissed_2026_09_03','1'); } catch(e){}
+  try { localStorage.setItem('entryBannerDismissed_2026_09_03_v2','1'); } catch(e){}
   var el = document.getElementById('entryBanner');
   if (el) el.classList.add('hidden');
 }
 function copyEntryUrl(){
   var url = document.getElementById('entryUrl');
   if (!url) return;
-  var text = url.textContent.trim();
+  copyText(url.textContent.trim());
+}
+function copyAltUrl(){
+  copyText('https://cdn.jsdelivr.net/gh/buerdeshanaijun/dashboard@main/index.html');
+}
+function copyText(text){
   var done = function(){
     var t = document.getElementById('entryToast');
     if (t){ t.classList.add('show'); setTimeout(function(){t.classList.remove('show')}, 1500); }

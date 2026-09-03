@@ -2549,38 +2549,33 @@ function showDateTasks(dateStr) {
 
 // Main render function
 function doRender() {
-  try {
-    var data = getFiltered();
-    // If user has manually reordered tasks, use that; otherwise sort by priority
-    var userOrder = loadTaskOrder();
-    if (userOrder.length > 0) {
-      data = applyTaskOrder(data);
-    } else {
-      data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
-    }
-    var _steps = ['stats','reminders','statsAux','kanban','timeline','gantt','weekly','calendar','all','overview','done','filters'];
-    var _fns = [function(){renderStats(data);}, function(){renderReminders(getMergedTasks());}, function(){renderStatsAux(getMergedTasks());}, function(){renderKanban(data);}, function(){renderTimeline(data);}, function(){renderGantt(data);}, function(){renderWeekly(data);}, function(){renderCalendar(data);}, function(){renderAll(data);}, function(){renderOverview(data);}, function(){renderDone(data);}, function(){renderFilters();}];
-    for (var si = 0; si < _fns.length; si++) {
-      try { _fns[si](); }
-      catch (e) {
-        var _err = document.getElementById('syncStatus');
-        if (_err) { _err.textContent = 'RENDER ERR @ ' + _steps[si] + ': ' + (e && e.message ? e.message : String(e)); _err.className = 'sync-badge err'; }
-        var _ab = document.getElementById('allbox');
-        if (_ab && _steps[si] === 'all') _ab.innerHTML = '<div style="color:#ff4d6a;padding:20px">renderAll 抛错: ' + (e && e.message ? e.message : String(e)) + '</div>';
-        return;
-      }
-    }
-    // Render trend chart after weekly is rendered
-    setTimeout(function(){
-      var activeTab = document.querySelector(".tab.on");
-      if (activeTab && activeTab.textContent.trim() === "周总结") {
-        try { renderTrendChart(getMergedTasks()); } catch(e){}
-      }
-    }, 100);
-  } catch (e2) {
-    var _err2 = document.getElementById('syncStatus');
-    if (_err2) { _err2.textContent = 'doRender 抛错: ' + (e2 && e2.message ? e2.message : String(e2)); _err2.className = 'sync-badge err'; }
+  var data = getFiltered();
+  // If user has manually reordered tasks, use that; otherwise sort by priority
+  var userOrder = loadTaskOrder();
+  if (userOrder.length > 0) {
+    data = applyTaskOrder(data);
+  } else {
+    data.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
   }
+  renderStats(data);
+  renderReminders(getMergedTasks());
+  renderStatsAux(getMergedTasks());
+  renderKanban(data);
+  renderTimeline(data);
+  renderGantt(data);
+  renderWeekly(data);
+  renderCalendar(data);
+  renderAll(data);
+  renderOverview(data);
+  renderDone(data);
+  renderFilters();
+  // Render trend chart after weekly is rendered
+  setTimeout(function(){
+    var activeTab = document.querySelector(".tab.on");
+    if (activeTab && activeTab.textContent.trim() === "周总结") {
+      renderTrendChart(getMergedTasks());
+    }
+  }, 100);
 }
 
 // Tab switching
@@ -3613,15 +3608,15 @@ updateSyncUI = (function(orig) {
     var count = Object.keys(changes).length + newTasks.length;
     var btn = document.getElementById("syncBtn");
     var cntEl = document.getElementById("syncCount");
-    var clrBtn = document.getElementById("clearBtn");
+    var clrBtn = document.getElementById("clearBtn2") || document.getElementById("clearBtn");
     if (count > 0) {
       cntEl.textContent = "(" + count + ")";
-      btn.classList.add("has-changes");
-      clrBtn.style.display = "inline-flex";
+      if (btn) btn.classList.add("has-changes");
+      if (clrBtn) clrBtn.style.display = "inline-flex";
     } else {
       cntEl.textContent = "";
-      btn.classList.remove("has-changes");
-      clrBtn.style.display = "none";
+      if (btn) btn.classList.remove("has-changes");
+      if (clrBtn) clrBtn.style.display = "none";
     }
   };
 })();

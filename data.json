@@ -3769,5 +3769,43 @@
       "示踪剂",
       "QHSE清单"
     ]
+  },
+  {
+    "id": 126,
+    "t": "💻 新购 M5 Pro Mac mini（18+20核/24G/512G）· 9/23 送达 + 旧机 tradein",
+    "c": "私人事务",
+    "p": "👤 私人",
+    "s": "待办",
+    "d": "2026-09-23",
+    "ds": "在 Apple 官网下单新版 M5 Pro Mac mini，配置：\n  • 处理器：M5 Pro（18+20 核）\n  • 内存：24G\n  • 存储：512G\n\n预计 2026-09-23 送达。\n旧 Mac mini 通过 Apple Trade In 抵扣。",
+    "pg": 0,
+    "g": "Apple设备",
+    "st": [
+      {
+        "t": "1. 9/23 签收新 Mac mini（M5 Pro / 24G / 512G）",
+        "s": "待办",
+        "d": "2026-09-23"
+      },
+      {
+        "t": "2. 旧 Mac mini 走 Apple Trade In 抵扣",
+        "s": "待办",
+        "d": "",
+        "who": "Apple Trade In"
+      }
+    ],
+    "updates": [
+      {
+        "d": "2026-09-04",
+        "t": "Apple 官网下单 M5 Pro Mac mini（18+20核/24G/512G），预计 9/23 送达；旧机走 tradein 抵扣",
+        "tag": "plan"
+      }
+    ],
+    "pr": "中",
+    "tags": [
+      "Apple",
+      "Mac mini",
+      "M5Pro",
+      "tradein"
+    ]
   }
 ]

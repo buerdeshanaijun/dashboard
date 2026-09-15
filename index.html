@@ -2039,23 +2039,10 @@ function renderOverview(data) {
 function renderFilters() {
   var cats = getCategories();
   var pCats = getParentCats();
-  // Collect all tags and assignees from TASKS
-  var tagSet = {};
-  var whoSet = {};
-  for (var i = 0; i < TASKS.length; i++) {
-    if (TASKS[i].tags) for (var ti = 0; ti < TASKS[i].tags.length; ti++) tagSet[TASKS[i].tags[ti]] = 1;
-    // Collect from task + subtask who
-    if (TASKS[i].who) whoSet[TASKS[i].who] = 1;
-    if (TASKS[i].st) for (var si = 0; si < TASKS[i].st.length; si++) {
-      if (TASKS[i].st[si].who) whoSet[TASKS[i].st[si].who] = 1;
-    }
-  }
-  var tags = Object.keys(tagSet).sort();
-  var whos = Object.keys(whoSet).sort();
   var ids = ["fk","ft","fg","fa","fd"];
   for (var fi = 0; fi < ids.length; fi++) {
     var html = "";
-    // Parent-level quick filters
+    // Parent-level quick filters (p field)
     for (var pi = 0; pi < pCats.length; pi++) {
       var pc = pCats[pi];
       var active = (filterCat === pc) ? " on" : "";
@@ -2063,33 +2050,15 @@ function renderFilters() {
       html += '<span class="fb' + active + '" onclick="setFilter(\'' + pc + '\')" title="' + pc + '">' + short + '</span>';
     }
     html += '<span style="color:#2a2e3f;margin:0 2px">|</span>';
-    // All categories
+    // All categories (c field)
     for (var ci = 0; ci < cats.length; ci++) {
       var c = cats[ci];
       var active = (filterCat === c) ? " on" : "";
       var shortName = c.indexOf(' › ') > 0 ? c.split(' › ')[1] : c;
       html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')" title="' + c + '">' + shortName + '</span>';
     }
-    // Tag filter chips
-    if (tags.length > 0) {
-      html += '<span style="color:#2a2e3f;margin:0 4px 0 8px">|</span>';
-      html += '<span style="font-size:10px;color:#5a6078;margin-right:4px">🏷️</span>';
-      for (var tgi = 0; tgi < tags.length; tgi++) {
-        var tg = tags[tgi];
-        var tagActive = (tagFilter === tg) ? " on" : "";
-        html += '<span class="fb' + tagActive + '" onclick="setTagFilter(\'' + tg + '\')" style="background:rgba(255,217,61,.12);color:#ffd93d" title="标签：' + tg + '">#' + tg + '</span>';
-      }
-    }
-    // Who filter chips
-    if (whos.length > 0) {
-      html += '<span style="color:#2a2e3f;margin:0 4px 0 8px">|</span>';
-      html += '<span style="font-size:10px;color:#5a6078;margin-right:4px">👤</span>';
-      for (var wi = 0; wi < whos.length; wi++) {
-        var w = whos[wi];
-        var wActive = (whoFilter === w) ? " on" : "";
-        html += '<span class="fb' + wActive + '" onclick="setWhoFilter(\'' + w + '\')" style="background:rgba(165,94,234,.12);color:#a55eea" title="负责人：' + w + '">' + w + '</span>';
-      }
-    }
+    // 9/16: 移除 tag chip 和 who chip 显示（之前造成 dashboard 顶部标签云混乱）
+    // tag/who 过滤函数 setTagFilter/setWhoFilter 保留，逻辑未删除，只是 UI 不再展示
     document.getElementById(ids[fi]).innerHTML = html;
   }
 }

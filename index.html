@@ -810,15 +810,19 @@ function clearLocalChanges() {
 }
 
 // ===== SEARCH =====
+// 搜索防抖（2026-09-15 优化）：避免每按一键就触发 12 个 render 函数全量重渲染
+var _searchTimer = null;
 function onSearch(val) {
-  searchQuery = val.trim();
+  // 清除按钮立即响应，不等防抖
   var clearBtn = document.getElementById("searchClear");
-  if (searchQuery !== "") {
-    clearBtn.classList.add("show");
-  } else {
-    clearBtn.classList.remove("show");
-  }
-  doRender();
+  if (val.trim() !== "") { clearBtn.classList.add("show"); }
+  else { clearBtn.classList.remove("show"); }
+
+  if (_searchTimer) clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(function() {
+    searchQuery = val.trim();
+    doRender();
+  }, 200);
 }
 
 function clearSearch() {
@@ -1074,41 +1078,25 @@ var weeklySummaries = null;
 var fetchRetries = 0;
 var MAX_RETRIES = 3;
 
-function checkDeployStatus(callback) {
-  // Check if the deployed data.json matches our expected version
-  // by fetching a lightweight status check
-  var chk = new XMLHttpRequest();
-  chk.open("GET", "data.json?t=" + Date.now(), true);
-  chk.timeout = 5000;
-  chk.onload = function() {
-    if (chk.status === 200) {
-      try {
-        var data = JSON.parse(chk.responseText);
-        // Check the latest task - this is our deployment marker
-        var latestId = 0;
-        for (var i = 0; i < data.length; i++) {
-          if (data[i].id > latestId) latestId = data[i].id;
-        }
-        callback(true, latestId, data);
-      } catch(e) {
-        callback(false, 0, null);
-      }
-    } else {
-      callback(false, 0, null);
-    }
-  };
-  chk.onerror = function() { callback(false, 0, null); };
-  chk.ontimeout = function() { callback(false, 0, null); };
-  chk.send();
-}
+// 2026-09-15: 删除死代码 checkDeployStatus()（定义了但从未调用，27 行）
 
-function fetchData(callback) {
+function fetchData(callback, forceFresh) {
   fetchRetries = 0;
-  fetchWithRetry(callback);
+  fetchWithRetry(callback, forceFresh);
 }
 
-function fetchWithRetry(callback) {
-  var url = "data.json?v=" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
+// 缓存策略（2026-09-15 优化）：
+// - 首次加载：data.json?d=<当天日期> → 命中 GitHub Pages 的 10 分钟缓存 + ETag 304，省流量
+// - 手动刷新：forceFresh=true → data.json?v=<时间戳> 强制拉最新（绕过缓存）
+function fetchWithRetry(callback, forceFresh) {
+  var url;
+  if (forceFresh) {
+    url = "data.json?v=" + Date.now() + "_" + Math.random().toString(36).slice(2,6);
+  } else {
+    var now = new Date();
+    var dayTag = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
+    url = "data.json?d=" + dayTag;
+  }
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
   xhr.timeout = 8000;
@@ -1143,7 +1131,7 @@ function fetchWithRetry(callback) {
     fetchRetries++;
     if (fetchRetries < MAX_RETRIES) {
       document.getElementById("syncStatus").textContent = "重试中 (" + fetchRetries + "/" + MAX_RETRIES + ")...";
-      setTimeout(function(){ fetchWithRetry(callback); }, 2000 * fetchRetries);
+      setTimeout(function(){ fetchWithRetry(callback, forceFresh); }, 2000 * fetchRetries);
     } else {
       document.getElementById("syncStatus").textContent = "网络错误，请刷新重试";
       document.getElementById("syncStatus").className = "sync-badge err";
@@ -1154,7 +1142,7 @@ function fetchWithRetry(callback) {
     fetchRetries++;
     if (fetchRetries < MAX_RETRIES) {
       document.getElementById("syncStatus").textContent = "超时重试 (" + fetchRetries + "/" + MAX_RETRIES + ")...";
-      setTimeout(function(){ fetchWithRetry(callback); }, 2000 * fetchRetries);
+      setTimeout(function(){ fetchWithRetry(callback, forceFresh); }, 2000 * fetchRetries);
     } else {
       document.getElementById("syncStatus").textContent = "请求超时，请刷新重试";
       document.getElementById("syncStatus").className = "sync-badge err";
@@ -1204,7 +1192,7 @@ function refreshData() {
     lastFetchTime = Date.now();
     doRender();
     showToast("数据已刷新");
-  });
+  }, true);  // forceFresh=true：手动刷新走缓存绕过，保证拿到最新数据
 }
 
 // Toast

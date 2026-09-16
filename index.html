@@ -89,37 +89,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .blocal{background:rgba(255,159,67,.2);color:#ff9f43;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px}
 .pb{width:100%;height:4px;background:#2a2e3f;border-radius:2px;margin-top:6px;overflow:hidden}
 .pb .pf{height:100%;border-radius:2px;transition:width .3s}
-/* Gantt */
-.gantt-wrap{overflow-x:auto;overflow-y:auto;max-height:70vh;margin-top:8px}
-.gantt-wrap table{border-collapse:collapse;min-width:800px;width:max-content}
-.gantt-wrap th,.gantt-wrap td{padding:5px 4px;font-size:10.5px;border:1px solid #1f2333}
-.gantt-wrap th{background:#1a1d28;color:#9ca3b8;font-weight:600;position:sticky;top:0;z-index:5}
-.gantt-wrap .g-today{background:rgba(255,77,106,.15)!important;color:#ff4d6a}
-.gantt-wrap .g-today::after{content:'▼';font-size:8px;margin-left:2px}
-.gantt-bar{border-radius:3px;height:18px;min-width:3px;display:inline-block;position:relative}
-.gantt-bar.g-done{background:rgba(46,213,115,.6)}
-.gantt-bar.g-progress{background:rgba(255,159,67,.6)}
-.gantt-bar.g-wait{background:rgba(120,140,160,.35)}
-.gantt-bar.g-urgent{background:rgba(255,77,106,.6)}
-.gantt-task-name{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px;color:#e8eaf0;font-weight:600}
-.gantt-task-name.done{text-decoration:line-through;color:#778ca3}
-/* Weekly Summary */
-.ws-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
-.ws-card{background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f}
-.ws-card h3{font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #2a2e3f;display:flex;align-items:center;gap:6px}
-.ws-card .ws-icon{font-size:16px}
-.ws-card.done h3{color:#2ed573;border-color:#2ed573}
-.ws-card.todo h3{color:#ff9f43;border-color:#ff9f43}
-.ws-card.wait h3{color:#778ca3;border-color:#778ca3}
-.ws-card.urgent h3{color:#ff4d6a;border-color:#ff4d6a}
-.ws-item{font-size:11px;color:#c4c9d4;padding:5px 0;border-bottom:1px solid #232738;display:flex;align-items:center;gap:6px}
-.ws-item:last-child{border-bottom:none}
-.ws-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ws-num{font-size:28px;font-weight:800;float:right}
-.ws-stat-group{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px}
-.ws-stat{background:#0f1117;border-radius:8px;padding:10px;text-align:center}
-.ws-stat .num{font-size:20px;font-weight:800}
-.ws-stat .lab{font-size:9px;color:#9ca3b8;margin-top:2px}
 /* Calendar */
 .cal-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0}
 .cal-header button{background:#1a1d28;border:1px solid #2a2e3f;color:#9ca3b8;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer}
@@ -145,15 +114,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .cal-day-pop .cp-status.done-c{color:#2ed573;background:rgba(46,213,115,.15)}
 .cal-day-pop .cp-status.todo-c{color:#ff9f43;background:rgba(255,159,67,.15)}
 .cal-day-pop .cp-status.wait-c{color:#778ca3;background:rgba(120,140,160,.15)}
-.tl{position:relative;padding-left:24px}
-.tl::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2.5px;background:#2a2e3f;border-radius:2px}
-.tg{margin-bottom:18px}
-.tldate{font-size:13px;font-weight:700;margin-bottom:8px;position:relative}
-.tldate::before{content:'';position:absolute;left:-19px;top:50%;width:10px;height:10px;border-radius:50%;background:#6c8cff;transform:translateY(-50%);border:3px solid #0f1117}
-.tldate.today::before{background:#ff4d6a;box-shadow:0 0 8px rgba(255,77,106,.5)}
-.tldate.today{color:#ff4d6a}
-.tldate.past::before{background:#2ed573}
-.tldate.past{color:#2ed573}
 .mo{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:16px}
 .mo.show{display:flex}
 .md{background:#1a1d28;border-radius:14px;padding:20px;max-width:440px;width:100%;border:1px solid #2a2e3f;max-height:85vh;overflow-y:auto}
@@ -297,32 +257,13 @@ body[data-theme="light"] .ft{color:#5a6078;border-top-color:#d8dce6}
 .ov-card .ov-progress .ov-bar{height:100%;border-radius:3px;transition:width .5s}
 .ov-stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:#c4c9d4}
 .ov-stat-row .ov-label{color:#9ca3b8}
-/* Tree view */
-#treeBox{background:#151720;border-radius:10px;margin-top:4px;padding:10px 4px;overflow:auto;max-height:75vh}
-.tn-cat{margin-bottom:8px;border:1px solid #2a2e3f;border-radius:8px;overflow:hidden}
-.tn-cat-h{padding:8px 10px;background:#1a1d28;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;border-bottom:1px solid #2a2e3f;user-select:none}
-.tn-cat-h:hover{background:#1f2333}
-.tn-arr{font-size:8px;transition:transform .2s;color:#6c8cff}
-.tn-arr.tn-open{transform:rotate(0deg)}
-.tn-stat{font-size:10px;color:#9ca3b8;font-weight:400;margin-left:auto}
-.tn-bar{width:60px;height:4px;background:#2a2e3f;border-radius:2px;overflow:hidden;margin-left:6px}
-.tn-fill{height:100%;border-radius:2px;display:block}
-.tn-body{padding:4px 8px 8px}
-.tn-grp{margin-bottom:6px}
-.tn-grp-h{font-size:11px;font-weight:700;color:#6c8cff;padding:5px 4px;display:flex;align-items:center;gap:4px}
-.tn-grp-cnt{font-size:9px;color:#5a6078;font-weight:400;background:rgba(108,140,255,.1);padding:1px 6px;border-radius:6px}
-.tn-task{padding:5px 8px;display:flex;align-items:center;gap:6px;border-radius:6px;cursor:pointer;font-size:12px;transition:background .1s;border:1px solid transparent;margin-bottom:2px}
-.tn-task:hover{background:rgba(108,140,255,.08);border-color:rgba(108,140,255,.2)}
-.tn-task.tn-done{opacity:.5}
-.tn-task.tn-overdue{border-color:rgba(255,77,106,.3)!important;background:rgba(255,77,106,.05)}
-.tn-task.tn-local{border-color:rgba(255,159,67,.3)}
-.tn-sicon{font-size:12px;flex-shrink:0}
-.tn-picon{font-size:10px;flex-shrink:0}
-.tn-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tn-pg{font-size:10px;color:#5a6078;flex-shrink:0}
-.tn-st{padding:2px 8px 2px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:#9ca3b8}
-.tn-st.tn-done{color:#5a6078;text-decoration:line-through}
-.tn-upd{font-size:9px;color:#5a6078;padding:2px 8px 2px 28px}
+/* 2026-09-16: 区域/项目分布条形图 */
+.cbar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px}
+.cbar-name{width:112px;flex-shrink:0;color:#c4c9d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbar-track{height:16px;background:#0f1117;border-radius:4px;overflow:hidden;display:flex;flex:1;max-width:100%}
+.cbar-done{height:100%;background:linear-gradient(90deg,#2ed573,#26b463);transition:width .4s}
+.cbar-active{height:100%;background:linear-gradient(90deg,#ff9f43,#e8853a);transition:width .4s}
+.cbar-num{width:82px;flex-shrink:0;text-align:right;color:#9ca3b8;font-size:10px;white-space:nowrap}
 
 .batch-btn.cancel{background:rgba(120,120,140,.12);color:#9ca3b8}
 .tc-select{position:absolute;top:8px;left:8px;width:18px;height:18px;border-radius:4px;border:2px solid #3a3f55;background:transparent;cursor:pointer;z-index:6;display:none;align-items:center;justify-content:center;font-size:11px;color:transparent;transition:all .15s}
@@ -413,6 +354,7 @@ body.batch-mode .tt{padding-right:30px}
   <div class="tab" onclick="switchTab('kanban',this)">看板</div>
   <div class="tab" onclick="switchTab('overview',this)">总览</div>
   <div class="tab" onclick="switchTab('calendar',this)">日历</div>
+  <div class="tab" onclick="switchTab('done',this)">已完成</div>
 </div>
 
 <div id="loadingArea" style="padding:40px 16px;text-align:center">
@@ -435,44 +377,14 @@ body.batch-mode .tt{padding-right:30px}
   </div>
 </div>
 
-<div class="vw" id="v-timeline" style="display:none">
-  <div class="fbar" id="ft"></div>
-  <div class="tl" id="tlbox"></div>
-</div>
-
 <div class="vw" id="v-all" style="display:none">
   <div class="fbar" id="fa"></div>
   <div id="allbox"></div>
 </div>
 
-<div class="vw" id="v-gantt" style="display:none">
-  <div class="fbar" id="fg"></div>
-  <div id="ganttBox" style="padding:0 4px"></div>
-</div>
-
-<div class="vw" id="v-weekly" style="display:none">
-  <div id="weeklyBox" style="padding:0 4px"></div>
-</div>
-
 <div class="vw" id="v-calendar" style="display:none">
   <div id="calBox" style="padding:0 4px"></div>
 </div>
-<div class="vw" id="v-tree" style="display:none">
-  <div id="treeBox"></div>
-</div>
-<div class="mo" id="treeEditMo" onclick="if(event.target===this)closeTreeEdit()"><div class="md" id="treeEditMd" onclick="event.stopPropagation()">
-  <h2 id="treeEditTitle">编辑任务</h2>
-  <div class="fl"><div class="form-row">
-    <div><label>分组</label><select id="te-g"></select></div>
-    <div><label>优先级</label><select id="te-p"><option value="紧急">紧急</option><option value="高">高</option><option value="中" selected>中</option><option value="低">低</option></select></div>
-    <div><label>状态</label><select id="te-s"><option value="待办">待办</option><option value="进行中">进行中</option><option value="等待">等待</option><option value="已完成">已完成</option></select></div>
-  </div></div>
-  <div class="form-actions">
-    <button class="btn-primary" id="treeEditSaveBtn" onclick="treeEditSave()">✓ 确认修改</button>
-    <button class="btn-cancel" onclick="closeTreeEdit()">取消</button>
-  </div>
-</div></div>
-
 
 <div class="vw" id="v-overview" style="display:none">
   <div id="overviewBox" style="padding:0 4px"></div>
@@ -576,7 +488,6 @@ function copyText(text){
 var TASKS = [];
 var filterCat = "全部";
 var searchQuery = "";
-var tagFilter = ""; // empty = all
 var whoFilter = ""; // empty = all
 var TODAY = "";
 var DATA_VERSION = "";
@@ -923,101 +834,6 @@ function checkTodayTasks() {
   } catch(e) {}
 }
 
-// ===== COMPLETION TREND CHART =====
-var trendChart = null;
-
-function renderTrendChart(data) {
-  // Count completed tasks per day (last 14 days)
-  var dayMap = {};
-  var today = new Date();
-  for (var i = 14; i >= 0; i--) {
-    var d = new Date(today);
-    d.setDate(d.getDate() - i);
-    var key = formatDate(d);
-    dayMap[key] = 0;
-  }
-
-  // We don't have exact completion dates, so use the task's "d" field as a proxy
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].s === "已完成" && data[i].d && dayMap[data[i].d] !== undefined) {
-      dayMap[data[i].d]++;
-    }
-  }
-
-  var labels = Object.keys(dayMap);
-  var values = [];
-  for (var li = 0; li < labels.length; li++) {
-    values.push(dayMap[labels[li]]);
-  }
-
-  // Short labels (MM/DD)
-  var shortLabels = labels.map(function(d){ return d.substring(5); });
-
-  var chartBox = document.getElementById("trendChartBox");
-  if (!chartBox) return;
-
-  chartBox.innerHTML = '<canvas id="trendChartCanvas" role="img" aria-label="近14天任务完成趋势"></canvas>';
-
-  // Load Chart.js if not loaded
-  if (typeof Chart === "undefined") {
-    var script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js";
-    script.onload = function() { buildChart(shortLabels, values); };
-    document.head.appendChild(script);
-  } else {
-    buildChart(shortLabels, values);
-  }
-}
-
-function buildChart(labels, values) {
-  if (trendChart) trendChart.destroy();
-
-  var canvas = document.getElementById("trendChartCanvas");
-  if (!canvas) return;
-
-  var ctx = canvas.getContext("2d");
-  if (!ctx) return;
-
-  trendChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "完成数量",
-        data: values,
-        backgroundColor: "rgba(108,140,255,.45)",
-        borderColor: "#6c8cff",
-        borderWidth: 1.5,
-        borderRadius: 4,
-        barPercentage: 0.6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            stepSize: 1,
-            color: "#9ca3b8",
-            font: { size: 10 }
-          },
-          grid: { color: "rgba(255,255,255,.06)" }
-        },
-        x: {
-          ticks: {
-            color: "#9ca3b8",
-            font: { size: 9 },
-            maxRotation: 45
-          },
-          grid: { display: false }
-        }
-      }
-    }
-  });
-}
 
 // ===== TASK DURATION STATS =====
 function calcDurationStats(data) {
@@ -1074,7 +890,6 @@ var pOrd = {"紧急":0,"高":1,"中":2,"低":3};
 
 // ===== FETCH DATA =====
 // Weekly summaries data
-var weeklySummaries = null;
 var fetchRetries = 0;
 var MAX_RETRIES = 3;
 
@@ -1111,11 +926,8 @@ function fetchWithRetry(callback, forceFresh) {
       document.getElementById("syncStatus").textContent = "数据已加载: " + DATA_VERSION;
         document.getElementById("syncStatus").className = "sync-badge ok";
         document.getElementById("updateTime").textContent = "数据版本: " + DATA_VERSION;
-        // Load weekly summaries
-        loadWeeklySummaries(function() {
-          hideLoading();
-          if (callback) callback();
-        });
+        hideLoading();
+        if (callback) callback();
       } catch(e) {
         document.getElementById("syncStatus").textContent = "数据解析失败";
         document.getElementById("syncStatus").className = "sync-badge err";
@@ -1152,29 +964,6 @@ function fetchWithRetry(callback, forceFresh) {
   xhr.send();
 }
 
-function loadWeeklySummaries(callback) {
-  var sUrl = "weekly-summaries.json?t=" + Date.now();
-  var sxhr = new XMLHttpRequest();
-  sxhr.open("GET", sUrl, true);
-  sxhr.timeout = 5000;
-  sxhr.onload = function() {
-    if (sxhr.status === 200) {
-      try { weeklySummaries = JSON.parse(sxhr.responseText); } catch(e) { weeklySummaries = {}; }
-    } else {
-      weeklySummaries = {};
-    }
-    if (callback) callback();
-  };
-  sxhr.onerror = function() {
-    weeklySummaries = {};
-    if (callback) callback();
-  };
-  sxhr.ontimeout = function() {
-    weeklySummaries = {};
-    if (callback) callback();
-  };
-  sxhr.send();
-}
 
 function hideLoading() {
   var el = document.getElementById("loadingArea");
@@ -1389,14 +1178,6 @@ function getFiltered() {
     }
     data = r2;
   }
-  // Tag filter
-  if (tagFilter) {
-    var r3 = [];
-    for (var i = 0; i < data.length; i++) {
-      if (data[i].tags && data[i].tags.indexOf(tagFilter) !== -1) r3.push(data[i]);
-    }
-    data = r3;
-  }
   // Who filter
   if (whoFilter) {
     var r4 = [];
@@ -1607,35 +1388,6 @@ function renderKanban(data) {
 }
 
 // Render timeline
-function renderTimeline(data) {
-  var groups = {};
-  for (var i = 0; i < data.length; i++) {
-    var d = data[i].d;
-    if (!groups[d]) groups[d] = [];
-    groups[d].push(data[i]);
-  }
-
-  var dates = Object.keys(groups).sort();
-  var html = "";
-
-  for (var di = 0; di < dates.length; di++) {
-    var d = dates[di];
-    var cls = d === TODAY ? "today" : (d < TODAY ? "past" : "");
-    var label = d === TODAY ? d + " &#128205; 今天" : d;
-
-    html += '<div class="tg">';
-    html += '<div class="tldate ' + cls + '">' + label + '</div>';
-
-    var items = groups[d];
-    items.sort(function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);});
-    for (var ji = 0; ji < items.length; ji++) {
-      html += makeCard(items[ji]);
-    }
-    html += '</div>';
-  }
-
-  document.getElementById("tlbox").innerHTML = html || '<div class="empty">暂无任务</div>';
-}
 
 // Render all tasks table
 function renderAll(data) {
@@ -1914,7 +1666,36 @@ function renderOverview(data) {
     return bActive - aActive;
   });
 
-  var html = '';
+  // 2026-09-16: 区域/项目分布条形图（顶部汇总，紧凑对比各区域负载）
+  var totalAll = 0, doneAll = 0, maxTotal = 0;
+  for (var ai = 0; ai < catOrder.length; ai++) {
+    totalAll += cats[catOrder[ai]].total;
+    doneAll += cats[catOrder[ai]].doneCount;
+    if (cats[catOrder[ai]].total > maxTotal) maxTotal = cats[catOrder[ai]].total;
+  }
+  var barHtml = '<div style="background:#151720;border-radius:10px;padding:14px;margin-bottom:12px;border:1px solid #2a2e3f">';
+  barHtml += '<h3 style="font-size:14px;font-weight:700;margin-bottom:10px;color:#e8eaf0">📊 区域 / 项目分布'
+           + '<span style="font-size:11px;color:#9ca3b8;font-weight:400;margin-left:8px">共 ' + totalAll + ' 项 · 已完成 ' + doneAll + ' 项 · 进行中 ' + (totalAll - doneAll) + ' 项</span></h3>';
+  for (var bi = 0; bi < catOrder.length; bi++) {
+    var bc = catOrder[bi];
+    var bcat = cats[bc];
+    var wTotal = maxTotal > 0 ? (bcat.total / maxTotal * 100) : 0;
+    var wDonePct = bcat.total > 0 ? (bcat.doneCount / bcat.total * 100) : 0;
+    var wActivePct = 100 - wDonePct;
+    var bPct = Math.round(wDonePct);
+    barHtml += '<div class="cbar-row">';
+    barHtml += '<span class="cbar-name" title="' + bc + '">' + bc + '</span>';
+    barHtml += '<span class="cbar-track" style="width:' + wTotal + '%">';
+    barHtml += '<span class="cbar-done" style="width:' + wDonePct + '%"></span>';
+    barHtml += '<span class="cbar-active" style="width:' + wActivePct + '%"></span>';
+    barHtml += '</span>';
+    barHtml += '<span class="cbar-num">' + bcat.total + ' 项 · ' + bPct + '%</span>';
+    barHtml += '</div>';
+  }
+  barHtml += '<div style="font-size:10px;color:#5a6078;margin-top:8px">■ 绿=已完成　■ 橙=未完成　条长=相对任务量</div>';
+  barHtml += '</div>';
+
+  var html = barHtml;
   for (var ci = 0; ci < catOrder.length; ci++) {
     var c = catOrder[ci];
     var cat = cats[c];
@@ -2027,8 +1808,11 @@ function renderOverview(data) {
 function renderFilters() {
   var cats = getCategories();
   var pCats = getParentCats();
-  var ids = ["fk","ft","fg","fa","fd"];
+  // 2026-09-16: 移除已删除视图（timeline/gantt）的 fbar id；加 null 检查防御
+  var ids = ["fk","fa","fd"];
   for (var fi = 0; fi < ids.length; fi++) {
+    var _fbar = document.getElementById(ids[fi]);
+    if (!_fbar) continue;
     var html = "";
     // Parent-level quick filters (p field)
     for (var pi = 0; pi < pCats.length; pi++) {
@@ -2045,113 +1829,11 @@ function renderFilters() {
       var shortName = c.indexOf(' › ') > 0 ? c.split(' › ')[1] : c;
       html += '<span class="fb' + active + '" onclick="setFilter(\'' + c + '\')" title="' + c + '">' + shortName + '</span>';
     }
-    // 9/16: 移除 tag chip 和 who chip 显示（之前造成 dashboard 顶部标签云混乱）
-    // tag/who 过滤函数 setTagFilter/setWhoFilter 保留，逻辑未删除，只是 UI 不再展示
-    document.getElementById(ids[fi]).innerHTML = html;
+    // 9/16: 任务 tags 字段已整体移除；who 过滤机制保留（UI 不展示）
+    _fbar.innerHTML = html;
   }
 }
 
-// Render Gantt chart
-function renderGantt(data) {
-  // Filter tasks with dates
-  var withDates = [];
-  var noDates = [];
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].d && data[i].d !== "") withDates.push(data[i]);
-    else noDates.push(data[i]);
-  }
-  // Sort by date
-  withDates.sort(function(a,b){ return (a.d||"") < (b.d||"") ? -1 : 1; });
-
-  if (withDates.length === 0) {
-    document.getElementById("ganttBox").innerHTML = '<div class="empty">暂无带日期的任务</div>';
-    return;
-  }
-
-  // Find date range
-  var minDate = withDates[0].d;
-  var maxDate = withDates[0].d;
-  for (var i = 0; i < withDates.length; i++) {
-    if (withDates[i].d < minDate) minDate = withDates[i].d;
-    if (withDates[i].d > maxDate) maxDate = withDates[i].d;
-  }
-
-  // Extend range: start from Monday of the week containing minDate, end to Sunday of week containing maxDate
-  var minD = new Date(minDate + "T00:00:00");
-  var maxD = new Date(maxDate + "T00:00:00");
-  minD.setDate(minD.getDate() - minD.getDay() + 1); // Monday
-  maxD.setDate(maxD.getDate() - maxD.getDay() + 7); // Next Sunday
-
-  // Generate week columns
-  var weeks = [];
-  var cur = new Date(minD);
-  var todayD = TODAY;
-  while (cur <= maxD) {
-    var weekStart = new Date(cur);
-    var weekEnd = new Date(cur);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    var ws = formatDate(weekStart);
-    var we = formatDate(weekEnd);
-    var isThisWeek = (todayD >= ws && todayD <= we);
-    weeks.push({ start: ws, end: we, label: ws.substring(5) + "~" + we.substring(5), today: isThisWeek });
-    cur.setDate(cur.getDate() + 7);
-  }
-
-  // Build table
-  var html = '<div class="gantt-wrap"><table>';
-  // Header
-  html += '<tr><th style="min-width:100px;position:sticky;left:0;z-index:6;background:#151720">任务</th><th style="min-width:50px;position:sticky;left:100px;z-index:6;background:#151720">进展</th>';
-  for (var wi = 0; wi < weeks.length; wi++) {
-    html += '<th class="' + (weeks[wi].today ? 'g-today' : '') + '" style="min-width:44px" title="' + weeks[wi].start + ' ~ ' + weeks[wi].end + '">' + weeks[wi].label + '</th>';
-  }
-  html += '</tr>';
-
-  // Rows
-  var barColors = {"已完成":"g-done","待办":"g-progress","进行中":"g-progress","等待":"g-wait"};
-
-  for (var ri = 0; ri < withDates.length; ri++) {
-    var t = withDates[ri];
-    var taskDate = t.d;
-    var statusCls = barColors[t.s] || "g-wait";
-    var doneMark = t.s === "已完成" ? " done" : "";
-
-    html += '<tr>';
-    html += '<td style="position:sticky;left:0;background:#151720;z-index:3" title="' + t.t + '"><div class="gantt-task-name' + doneMark + '">' + t.t + '</div></td>';
-    html += '<td style="position:sticky;left:100px;background:#151720;z-index:3;text-align:center;font-size:10px;color:#9ca3b8">' + t.pg + '%</td>';
-
-    for (var wi = 0; wi < weeks.length; wi++) {
-      var w = weeks[wi];
-      var inWeek = (taskDate >= w.start && taskDate <= w.end);
-      if (inWeek) {
-        // Calculate position within the week (day of week offset)
-        var td = new Date(taskDate + "T00:00:00");
-        var dayOfWeek = td.getDay();
-        var wsD = new Date(w.start + "T00:00:00");
-        var dayOffset = Math.floor((td - wsD) / 86400000);
-        var leftPct = (dayOffset / 7) * 100;
-        html += '<td style="text-align:left;position:relative" title="' + t.t + ' (' + taskDate + ')"><div class="gantt-bar ' + statusCls + '" style="width:60%;margin-left:' + leftPct + '%"></div></td>';
-      } else {
-        html += '<td></td>';
-      }
-    }
-    html += '</tr>';
-  }
-  html += '</table></div>';
-
-  // No-date tasks
-  if (noDates.length > 0) {
-    html += '<div style="margin-top:12px;padding:10px;background:#1a1d28;border-radius:8px;border:1px solid #2a2e3f">';
-    html += '<div style="font-size:11px;color:#9ca3b8;margin-bottom:6px;font-weight:600">未排期任务 (' + noDates.length + ')</div>';
-    for (var ni = 0; ni < noDates.length; ni++) {
-      var nt = noDates[ni];
-      var npc = pCls[nt.p] || "bm";
-      html += '<div style="font-size:10.5px;padding:2px 0;color:' + (nt.s === "已完成" ? "#778ca3" : "#c4c9d4") + '">' + (nt.s === "已完成" ? '<s>' + nt.t + '</s>' : nt.t) + ' <span class="bg ' + npc + '">' + nt.p + '</span></div>';
-    }
-    html += '</div>';
-  }
-
-  document.getElementById("ganttBox").innerHTML = html;
-}
 
 // Helper: format date
 function formatDate(d) {
@@ -2178,182 +1860,6 @@ function resetWeek() {
 }
 
 // Render Weekly Summary
-function renderWeekly(data) {
-  // Get week range based on offset (Mon-Sun)
-  var now = new Date();
-  now.setDate(now.getDate() + weekOffset * 7);
-  var dayOfWeek = now.getDay();
-  var monday = new Date(now);
-  monday.setDate(now.getDate() - dayOfWeek + 1);
-  var sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  var ws = formatDate(monday);
-  var we = formatDate(sunday);
-
-  // Categorize tasks
-  var thisWeek = [];
-  var overdue = [];
-  var completedThisWeek = []; // Tasks completed (can be from any date but we show recent)
-  for (var i = 0; i < data.length; i++) {
-    var t = data[i];
-    var td = t.d;
-    // Due this week
-    if (td && td >= ws && td <= we && t.s !== "已完成") {
-      thisWeek.push(t);
-    }
-    // Overdue (due before today but not completed)
-    if (td && td < TODAY && td !== "" && t.s !== "已完成") {
-      overdue.push(t);
-    }
-    // Completed tasks (show all recently completed)
-    if (t.s === "已完成") {
-      completedThisWeek.push(t);
-    }
-  }
-
-  // Sort
-  var sortP = function(a,b){return(pOrd[a.pr]||2)-(pOrd[b.pr]||2);};
-  thisWeek.sort(sortP);
-  overdue.sort(sortP);
-  completedThisWeek.sort(function(a,b){ return (b.d||"") < (a.d||"") ? -1 : 1; });
-
-  // Stats
-  var total = data.length;
-  var doneCount = 0, todoCount = 0, waitCount = 0, urgentCount = 0;
-  for (var i = 0; i < data.length; i++) {
-    if (data[i].s === "已完成") doneCount++;
-    else if (data[i].s === "等待") waitCount++;
-    else todoCount++;
-    if (data[i].p === "紧急" && data[i].s !== "已完成") urgentCount++;
-  }
-
-  var html = '';
-  // Week header with navigation
-  html += '<div style="background:linear-gradient(135deg,#1a1d28,#252a3a);border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:10px">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center">';
-  html += '<div style="display:flex;align-items:center;gap:8px">';
-  html += '<button onclick="changeWeek(-1)" style="background:#2a2e3f;border:1px solid #3a3f55;color:#9ca3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">&larr; 上周</button>';
-  html += '<button onclick="changeWeek(1)" style="background:#2a2e3f;border:1px solid #3a3f55;color:#9ca3b8;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600">下周 &rarr;</button>';
-  html += '</div>';
-  html += '<div style="text-align:center">';
-  html += '<div style="font-size:14px;font-weight:700;color:#6c8cff">' + (weekOffset === 0 ? '本周' : (weekOffset < 0 ? (-weekOffset) + '周前' : weekOffset + '周后')) + ' · 第 ' + getWeekNumber(monday) + ' 周</div>';
-  html += '<div style="font-size:10px;color:#9ca3b8;margin-top:2px">' + ws + ' ~ ' + we + '</div>';
-  html += '</div>';
-  html += '<div style="display:flex;align-items:center;gap:8px">';
-  if (weekOffset !== 0) {
-    html += '<button onclick="resetWeek()" style="background:rgba(108,140,255,.15);border:1px solid rgba(108,140,255,.3);color:#6c8cff;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">回到本周</button>';
-  } else {
-    html += '<span style="width:70px"></span>';
-  }
-  html += '</div>';
-  html += '</div></div>';
-
-  // Weekly AI Summary
-  var wn = getWeekNumber(monday);
-  var yr = monday.getFullYear();
-  var wkKey = yr + '-W' + (wn < 10 ? '0' : '') + wn;
-  var sumText = weeklySummaries ? weeklySummaries[wkKey] : null;
-  if (sumText) {
-    html += '<div style="background:linear-gradient(135deg,#1a2428,#1a1d28);border:1px solid #2a5065;border-radius:10px;padding:14px;margin-bottom:10px">';
-    html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">';
-    html += '<span style="font-size:12px;color:#4fc3f7;font-weight:700">&#128220; 本周AI总结</span>';
-    html += '<span style="font-size:9px;color:#9ca3b8">(自动生成·每周日23:00)</span>';
-    html += '</div>';
-    html += '<div style="font-size:12px;color:#c4c9d4;line-height:1.7;padding:8px;background:rgba(79,195,247,.06);border-radius:6px">' + sumText.replace(/\n/g, '<br>') + '</div>';
-    html += '</div>';
-  }
-
-  // Stats grid
-  html += '<div class="ws-stat-group">';
-  html += '<div class="ws-stat"><div class="num" style="color:#ff4d6a">' + urgentCount + '</div><div class="lab">紧急待办</div></div>';
-  html += '<div class="ws-stat"><div class="num" style="color:#ff9f43">' + todoCount + '</div><div class="lab">进行中</div></div>';
-  html += '<div class="ws-stat"><div class="num" style="color:#2ed573">' + doneCount + '</div><div class="lab">已完成</div></div>';
-  html += '<div class="ws-stat"><div class="num" style="color:#778ca3">' + waitCount + '</div><div class="lab">等待中</div></div>';
-  html += '</div>';
-
-  // Cards grid
-  html += '<div class="ws-grid">';
-
-  // Overdue
-  html += '<div class="ws-card urgent"><h3><span class="ws-icon">&#9888;</span> 逾期未完成 (' + overdue.length + ')</h3>';
-  if (overdue.length === 0) html += '<div class="empty">暂无逾期任务 &#127881;</div>';
-  for (var oi = 0; oi < overdue.length; oi++) {
-    var ot = overdue[oi];
-    html += '<div class="ws-item"><span class="ws-dot" style="background:#ff4d6a"></span><span style="flex:1">' + ot.t + '</span><span style="color:#ff4d6a;font-size:9px">' + ot.d + '</span></div>';
-  }
-  html += '</div>';
-
-  // This week
-  html += '<div class="ws-card todo"><h3><span class="ws-icon">&#128197;</span> 本周待办 (' + thisWeek.length + ')</h3>';
-  if (thisWeek.length === 0) html += '<div class="empty">本周暂无待办 &#127881;</div>';
-  for (var ti = 0; ti < thisWeek.length; ti++) {
-    var tt = thisWeek[ti];
-    var ppc = pCls[tt.p] || "bm";
-    html += '<div class="ws-item"><span class="ws-dot" style="background:#ff9f43"></span><span style="flex:1">' + tt.t + '</span><span class="bg ' + ppc + '">' + tt.p + '</span></div>';
-  }
-  html += '</div>';
-
-  // Recently completed
-  html += '<div class="ws-card done"><h3><span class="ws-icon">&#10003;</span> 最近完成 (' + Math.min(10, completedThisWeek.length) + '/' + completedThisWeek.length + ')</h3>';
-  if (completedThisWeek.length === 0) html += '<div class="empty">暂无完成记录</div>';
-  for (var ci = 0; ci < Math.min(completedThisWeek.length, 10); ci++) {
-    var ct = completedThisWeek[ci];
-    html += '<div class="ws-item"><span class="ws-dot" style="background:#2ed573"></span><span style="flex:1">' + ct.t + '</span><span style="color:#2ed573;font-size:9px">' + ct.d + '</span></div>';
-  }
-  html += '</div>';
-
-  // Categories breakdown
-  html += '<div class="ws-card wait"><h3><span class="ws-icon">&#128230;</span> 任务分类统计</h3>';
-  var catStats = {};
-  for (var i = 0; i < data.length; i++) {
-    var cat = data[i].c;
-    if (!catStats[cat]) catStats[cat] = { t:0, d:0 };
-    catStats[cat].t++;
-    if (data[i].s === "已完成") catStats[cat].d++;
-  }
-  var catKeys = Object.keys(catStats);
-  catKeys.sort(function(a,b){ return catStats[b].t - catStats[a].t; });
-  for (var ci = 0; ci < catKeys.length; ci++) {
-    var ck = catKeys[ci];
-    var cs = catStats[ck];
-    var pct = cs.t > 0 ? Math.round(cs.d / cs.t * 100) : 0;
-    html += '<div class="ws-item"><span style="flex:1">' + ck + '</span><span style="font-size:10px;color:#9ca3b8">' + cs.d + '/' + cs.t + '</span><div class="pb" style="width:60px;margin-top:0"><div class="pf" style="width:' + pct + '%;background:#2ed573"></div></div></div>';
-  }
-  html += '</div>';
-
-  html += '</div>'; // ws-grid
-
-  // Duration Stats & Trend Chart
-  var ds = calcDurationStats(data);
-  if (ds) {
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">';
-    // Stats card
-    html += '<div class="ws-card" style="background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f">';
-    html += '<h3 style="color:#6c8cff;font-size:12px;font-weight:700;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #6c8cff;display:flex;align-items:center;gap:6px">效率统计</h3>';
-    html += '<div class="ws-stat-group" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px">';
-    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#2ed573">' + ds.done + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">已完成</div></div>';
-    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:' + (ds.rate > 50 ? '#2ed573' : '#ff9f43') + '">' + ds.rate + '%</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">完成率</div></div>';
-    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#ff9f43">' + ds.thisWeekDone + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">本周完成</div></div>';
-    html += '<div class="ws-stat" style="background:#0f1117;border-radius:8px;padding:10px;text-align:center"><div class="num" style="font-size:20px;font-weight:800;color:#ff4d6a">' + (ds.urgentTotal - ds.urgentDone) + '/' + ds.urgentTotal + '</div><div class="lab" style="font-size:9px;color:#9ca3b8;margin-top:2px">紧急未完成</div></div>';
-    html += '</div>';
-    // Category completion
-    var catKeys = Object.keys(ds.catCount).sort(function(a,b){ return ds.catCount[b] - ds.catCount[a]; });
-    for (var ci = 0; ci < catKeys.length; ci++) {
-      var ck = catKeys[ci];
-      var cDone = ds.catDone[ck] || 0;
-      var cTotal = ds.catCount[ck];
-      var cPct = Math.round(cDone / cTotal * 100);
-      html += '<div class="ws-item" style="font-size:11px;padding:4px 0;border-bottom:1px solid #232738;display:flex;align-items:center;gap:6px"><span style="flex:1;color:#c4c9d4">' + ck + '</span><span style="color:#9ca3b8;font-size:10px">' + cDone + '/' + cTotal + '</span><div class="pb" style="width:60px;margin:0"><div class="pf" style="width:' + cPct + '%;background:#6c8cff"></div></div></div>';
-    }
-    html += '</div>';
-
-    // Chart card
-    html += '<div class="chart-wrap" style="background:#1a1d28;border-radius:10px;padding:14px;border:1px solid #2a2e3f;margin-bottom:0"><h3 style="font-size:12px;font-weight:700;margin-bottom:10px;color:#6c8cff">近14天完成趋势</h3><div id="trendChartBox" style="height:180px"></div></div>';
-    html += '</div>'; // stats grid
-  }
-
-  document.getElementById("weeklyBox").innerHTML = html;
-}
 
 function getWeekNumber(d) {
   var start = new Date(d.getFullYear(), 0, 1);
@@ -2518,21 +2024,11 @@ function doRender() {
   renderReminders(getMergedTasks());
   renderStatsAux(getMergedTasks());
   renderKanban(data);
-  renderTimeline(data);
-  renderGantt(data);
-  renderWeekly(data);
   renderCalendar(data);
   renderAll(data);
   renderOverview(data);
   renderDone(data);
   renderFilters();
-  // Render trend chart after weekly is rendered
-  setTimeout(function(){
-    var activeTab = document.querySelector(".tab.on");
-    if (activeTab && activeTab.textContent.trim() === "周总结") {
-      renderTrendChart(getMergedTasks());
-    }
-  }, 100);
 }
 
 // Tab switching
@@ -2571,10 +2067,6 @@ function setFilter(cat) {
   doRender();
 }
 
-function setTagFilter(tag) {
-  tagFilter = (tagFilter === tag) ? "" : tag;
-  doRender();
-}
 
 function setWhoFilter(w) {
   whoFilter = (whoFilter === w) ? "" : w;
@@ -2844,18 +2336,10 @@ function openDetail(id) {
     }
     relatedHtml = '<div class="fl"><label>🔗 关联任务 (' + x.relatedTo.length + '项)</label><div class="vl">' + relItems + '</div></div>';
   }
-  var tagsHtml = '';
-  if (x.tags && x.tags.length) {
-    var tagItems = '';
-    for (var ti = 0; ti < x.tags.length; ti++) {
-      tagItems += '<span style="display:inline-block;background:rgba(255,217,61,.15);color:#ffd93d;padding:2px 8px;border-radius:10px;font-size:10px;margin-right:4px;margin-bottom:2px">#' + x.tags[ti] + '</span>';
-    }
-    tagsHtml = '<div class="fl"><label>🏷️ 标签</label><div class="vl" style="display:flex;flex-wrap:wrap;gap:2px">' + tagItems + '</div></div>';
-  }
 
   md.innerHTML =
     '<h2>' + x.t + (x._local ? ' <span class="blocal">本地修改</span>' : '') + '</h2>' +
-    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml + relatedHtml + tagsHtml +
+    '<div class="fl"><label>详细说明</label>' + dsHtml + '</div>' + stModalHtml + upHtml + relatedHtml +
     '<div class="fl" style="display:flex;gap:14px;flex-wrap:wrap">' +
       '<div><label>类别</label><div class="vl"><span class="bg ' + cc + '">' + x.c + '</span></div></div>' +
       (x.g ? '<div><label>分组</label><div class="vl"><span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span></div></div>' : '') +
@@ -2996,340 +2480,6 @@ function batchMarkDelete() {
 }
 
 
-// ===== TREE VIEW (Force-Directed Graph) =====
-var treeEditId = null;
-
-function loadD3(callback) {
-  if (typeof d3 !== 'undefined') { callback(); return; }
-  var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js';
-  s.onload = callback;
-  document.body.appendChild(s);
-}
-
-function renderTree() {
-  loadD3(function() {
-    var data = getMergedTasks();
-    var container = document.getElementById('treeBox');
-    container.innerHTML = '';
-    container.style.cssText = 'width:100%;height:80vh;background:#0f1117;border-radius:8px;overflow:hidden;position:relative';
-
-    if (data.length === 0) {
-      container.innerHTML = '<div class="empty" style="padding:40px">暂无任务</div>';
-      return;
-    }
-
-    var w = container.clientWidth || 900;
-    var h = Math.max(600, window.innerHeight * 0.75);
-    var cx = w / 2, cy = h / 2;
-
-    var svg = d3.select('#treeBox').append('svg')
-      .attr('width', w).attr('height', h)
-      .style('width', '100%').style('height', '100%')
-      .style('display', 'block').style('background', '#0f1117');
-
-    // Enable zoom + prevent page scroll
-    var zoom = d3.zoom()
-      .scaleExtent([0.2, 5])
-      .on('zoom', function(event) {
-        containerG.attr('transform', event.transform);
-      });
-    svg.call(zoom);
-    svg.on('wheel.zoom', function(event) { event.preventDefault(); });
-    svg.on('dblclick.zoom', null);
-
-    var containerG = svg.append('g');
-
-    // Arrow marker for links
-    svg.append('defs').append('marker')
-      .attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
-      .attr('refX', 20).attr('refY', 0)
-      .attr('markerWidth', 6).attr('markerHeight', 6)
-      .attr('orient', 'auto')
-      .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#444');
-
-    // Build graph data
-    var nodes = [];
-    var P_COLORS = {'🔬 科研':'#6c8cff','🏭 生产':'#ff9f43','📋 管理':'#ff4d6a','👤 私人':'#a55eea','🎓 培训':'#5fd6a8'};
-    var links = [];
-    var nodeMap = {};
-    var idCounter = 0;
-
-    function addNode(name, type, taskData, parentId) {
-      var n = { id: ++idCounter, name: name, type: type, task: taskData || null };
-      nodes.push(n);
-      nodeMap[name + '_' + type] = n.id;
-      if (parentId) links.push({ source: parentId, target: n.id });
-      return n.id;
-    }
-
-    // Root
-    var rootId = addNode('📋 任务总览 (' + data.length + '项)', 'root', null, null);
-
-    // Build parent → category → group → task hierarchy
-    var parents = {};
-    for (var i = 0; i < data.length; i++) {
-      var t = data[i];
-      var pname = t.p || '📦 其他';
-      if (!parents[pname]) parents[pname] = {};
-      var cat = t.c || '其他';
-      if (!parents[pname][cat]) parents[pname][cat] = {};
-      var gname = t.g || '未分组';
-      if (!parents[pname][cat][gname]) parents[pname][cat][gname] = [];
-      parents[pname][cat][gname].push(t);
-    }
-
-    var parentOrder = Object.keys(parents).sort(function(a,b){
-      var order = {'🔬 科研':0,'🏭 生产':1,'📋 管理':2,'👤 私人':3,'🎓 培训':4};
-      return (order[a]||9)-(order[b]||9);
-    });
-    for (var pi = 0; pi < parentOrder.length; pi++) {
-      var pname = parentOrder[pi];
-      var pColor = P_COLORS[pname] || '#9ca3b8';
-      var pId = addNode(pname, 'parent', null, rootId, pColor);
-
-      var cats = parents[pname];
-      var catOrder = Object.keys(cats).sort();
-      for (var ci = 0; ci < catOrder.length; ci++) {
-        var catName = catOrder[ci];
-        var catId = addNode(catName, 'category', null, pId);
-        var groups = cats[catName];
-        var gnames = Object.keys(groups).sort();
-        for (var gi = 0; gi < gnames.length; gi++) {
-          var grpName = gnames[gi];
-          var grpId = addNode(grpName, 'group', null, catId);
-          var tasks = groups[grpName];
-          tasks.sort(function(a,b){return (a.s==='已完成'?1:0)-(b.s==='已完成'?1:0);});
-          for (var ti = 0; ti < tasks.length; ti++) {
-            var t = tasks[ti];
-            var sIcon = t.s === '已完成' ? '✅' : (t.s === '进行中' ? '⏳' : (t.s === '等待' ? '⏸️' : '📋'));
-            var pIcon = t.p === '紧急' ? '🔴' : (t.p === '高' ? '🔼' : (t.p === '低' ? '🔽' : '➖'));
-            var label = sIcon + ' ' + pIcon + ' ' + t.t;
-            if (label.length > 30) label = label.substring(0, 28) + '..';
-            addNode(label, 'task', t, grpId);
-          }
-        }
-      }
-    }
-
-    // Force simulation
-    var simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id(function(d) { return d.id; }).distance(function(d) {
-        if (d.target.type === 'task') return 100;
-        if (d.target.type === 'group') return 130;
-        return 160;
-      }).strength(0.4))
-      .force('charge', d3.forceManyBody().strength(function(d) {
-        if (d.type === 'root') return -900;
-        if (d.type === 'parent') return -600;
-        if (d.type === 'category') return -400;
-        if (d.type === 'group') return -250;
-        return -100;
-      }))
-      .force('center', d3.forceCenter(cx, cy))
-      .force('collision', d3.forceCollide().radius(function(d) {
-        if (d.type === 'task') return 35;
-        if (d.type === 'group') return 45;
-        if (d.type === 'category') return 55;
-        if (d.type === 'parent') return 65;
-        return 50;
-      }));
-
-    // Draw links
-    var link = containerG.append('g').selectAll('line')
-      .data(links).enter().append('line')
-      .attr('stroke', '#333').attr('stroke-width', 1.5)
-      .attr('stroke-opacity', 0.5);
-
-    // Draw nodes
-    var node = containerG.append('g').selectAll('g')
-      .data(nodes).enter().append('g')
-      .attr('cursor', 'pointer')
-      .call(d3.drag()
-        .on('start', function(event, d) {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on('drag', function(event, d) {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on('end', function(event, d) {
-          if (!event.active) simulation.alphaTarget(0);
-          // Optionally pin the node where dropped
-          // d.fx = d.x; d.fy = d.y; // Uncomment to keep nodes in place after drag
-          d.fx = null; d.fy = null; // Let physics settle
-        })
-      );
-
-    // Root node: larger circle
-    node.filter(function(d) { return d.type === 'root'; })
-      .append('circle').attr('r', 28)
-      .attr('fill', 'url(#rootGrad)')
-      .attr('stroke', '#6c8cff').attr('stroke-width', 3);
-
-    // Parent nodes: colored circles with icon
-    node.filter(function(d) { return d.type === 'parent'; })
-      .append('circle').attr('r', 22)
-      .attr('fill', function(d) { return d.color || '#4a5568'; })
-      .attr('stroke', function(d) { return d.color || '#4a5568'; }).attr('stroke-width', 2).attr('opacity', 0.8);
-    
-    // Category nodes: medium circles
-    node.filter(function(d) { return d.type === 'category'; })
-      .append('circle').attr('r', 20)
-      .attr('fill', '#2a3a5a').attr('stroke', '#6c8cff').attr('stroke-width', 2);
-
-    // Group nodes: smaller circles
-    node.filter(function(d) { return d.type === 'group'; })
-      .append('circle').attr('r', 12)
-      .attr('fill', '#1f2937').attr('stroke', '#4a5568').attr('stroke-width', 1.5);
-
-    // Task nodes: rounded rects
-    var taskG = node.filter(function(d) { return d.type === 'task'; });
-    taskG.append('rect')
-      .attr('width', function(d) { return Math.max((d.name.length || 10) * 7 + 16, 60); })
-      .attr('height', 24)
-      .attr('x', function(d) { return -Math.max((d.name.length || 10) * 7 + 16, 60) / 2; })
-      .attr('y', -12)
-      .attr('rx', 12).attr('ry', 12)
-      .attr('fill', function(d) {
-        if (!d.task) return '#1a1d28';
-        if (d.task.s === '已完成') return '#0d2818';
-        if (d.task.s === '进行中') return '#0d2828';
-        if (d.task.p === '紧急') return '#2d1010';
-        return '#1a1d28';
-      })
-      .attr('stroke', function(d) {
-        if (!d.task) return '#3a3f55';
-        if (d.task.s === '已完成') return '#2ed573';
-        if (d.task.s === '进行中') return '#2ed573';
-        if (d.task.p === '紧急') return '#ff4d6a';
-        if (d.task.p === '高') return '#ff9f43';
-        return '#3a3f55';
-      })
-      .attr('stroke-width', 1.5)
-      .attr('stroke-dasharray', function(d) {
-        return d.task && d.task.s === '等待' ? '4,2' : '0';
-      });
-
-    taskG.append('text')
-      .attr('dy', 4)
-      .attr('text-anchor', 'middle')
-      .attr('fill', function(d) {
-        return d.task && d.task.s === '已完成' ? '#778ca3' : '#e8eaf0';
-      })
-      .attr('font-size', '10px')
-      .attr('font-weight', '600')
-      .text(function(d) { return d.name; });
-
-    // Labels for non-task nodes
-    node.filter(function(d) { return d.type === 'parent'; })
-      .append('text')
-      .attr('dy', 32).attr('text-anchor', 'middle')
-      .attr('fill', function(d) { return d.color || '#9ca3b8'; })
-      .attr('font-size', '12px').attr('font-weight', '800')
-      .text(function(d) { return d.name; });
-
-    node.filter(function(d) { return d.type !== 'task' && d.type !== 'parent'; })
-      .append('text')
-      .attr('dy', function(d) {
-        return d.type === 'root' ? '36' : (d.type === 'category' ? '32' : '24');
-      })
-      .attr('text-anchor', 'middle')
-      .attr('fill', function(d) {
-        if (d.type === 'root') return '#6c8cff';
-        if (d.type === 'category') return '#a0b4e8';
-        return '#9ca3b8';
-      })
-      .attr('font-size', function(d) {
-        return d.type === 'root' ? '14px' : (d.type === 'category' ? '12px' : '10px');
-      })
-      .attr('font-weight', function(d) {
-        return d.type === 'root' ? '800' : (d.type === 'category' ? '700' : '500');
-      })
-      .text(function(d) { return d.name; });
-
-    // Click to edit task
-    taskG.on('click', function(event, d) {
-      event.stopPropagation();
-      if (d.task && d.task.id) openTreeEdit(d.task.id);
-    });
-
-    // Hover effect on tasks
-    taskG.on('mouseenter', function() {
-      d3.select(this).select('rect').attr('stroke-width', 2.5);
-    }).on('mouseleave', function() {
-      d3.select(this).select('rect').attr('stroke-width', 1.5);
-    });
-
-    // Tick: update positions
-    simulation.on('tick', function() {
-      link.attr('x1', function(d) { return d.source.x; })
-        .attr('y1', function(d) { return d.source.y; })
-        .attr('x2', function(d) { return d.target.x; })
-        .attr('y2', function(d) { return d.target.y; });
-      node.attr('transform', function(d) { return 'translate(' + d.x + ',' + d.y + ')'; });
-    });
-
-    // Gradient for root
-    svg.select('defs').append('radialGradient').attr('id', 'rootGrad')
-      .append('stop').attr('offset', '0%').attr('stop-color', '#4a6cdf');
-    svg.select('#rootGrad').append('stop').attr('offset', '100%').attr('stop-color', '#6c8cff');
-
-    // Legend
-    var legend = svg.append('g').attr('transform', 'translate(10, 14)');
-    legend.append('text').attr('fill', '#555').attr('font-size', '10px')
-      .text('🖱️拖拽节点  👆点击任务  🔍滚轮缩放');
-  });
-}
-
-// Tree Edit Modal (same as before)
-function openTreeEdit(id) {
-  treeEditId = id;
-  var merged = getMergedTasks();
-  var t = null;
-  for (var i = 0; i < merged.length; i++) {
-    if (merged[i].id === id) { t = merged[i]; break; }
-  }
-  if (!t) { treeEditId = null; return; }
-  document.getElementById('treeEditTitle').textContent = '✏️ ' + t.t;
-  var groups = {};
-  for (var i = 0; i < TASKS.length; i++) {
-    if (TASKS[i].g) groups[TASKS[i].g] = 1;
-  }
-  var grpSel = document.getElementById('te-g');
-  grpSel.innerHTML = '<option value="">无</option>';
-  for (var gname in groups) {
-    grpSel.innerHTML += '<option value="' + gname + '">' + gname + '</option>';
-  }
-  grpSel.value = t.g || '';
-  document.getElementById('te-p').value = t.p || '中';
-  document.getElementById('te-s').value = t.s || '待办';
-  document.getElementById('treeEditMo').classList.add('show');
-}
-
-function closeTreeEdit() { document.getElementById('treeEditMo').classList.remove('show'); treeEditId = null; }
-
-function treeEditSave() {
-  if (!treeEditId) return;
-  var changes = loadLocalChanges();
-  var cid = String(treeEditId);
-  if (!changes[cid]) changes[cid] = {};
-  var g = document.getElementById('te-g').value;
-  var p = document.getElementById('te-p').value;
-  var s = document.getElementById('te-s').value;
-  if (g !== '') changes[cid]._group = g;
-  if (p) changes[cid]._priority = p;
-  if (s) changes[cid].s = s;
-  if (s === '已完成') changes[cid].pg = 100;
-  saveLocalChanges(changes);
-  closeTreeEdit();
-  updateSyncUI();
-  doRender();
-  showToast('已更新 ✅');
-}
-// ===== END TREE VIEW =====
 // ===== NEW: Add, Delete, Subtask Functions =====
 // New task storage
 function loadNewTasks() {
@@ -3551,10 +2701,42 @@ function toggleSubtask(taskId, stIdx) {
   curSt[stIdx].s = states[nextIdx];
 
   changes[cid].st = curSt;
+
+  // 2026-09-16: 子任务进度自动聚合 → 主任务 pg / s
+  // 规则：主任务 pg = 已完成子任务数 / 总子任务数；全部完成则主任务转"已完成"
+  var curMainS = changes[cid].s;
+  if (!curMainS) {
+    for (var mi = 0; mi < TASKS.length; mi++) {
+      if (TASKS[mi].id === taskId) { curMainS = TASKS[mi].s; break; }
+    }
+  }
+  var doneCount = 0;
+  for (var di = 0; di < curSt.length; di++) {
+    if (curSt[di].s === '已完成') doneCount++;
+  }
+  var aggPg = Math.round(doneCount * 100 / curSt.length);
+  var pgMsg = '';
+  if (doneCount === curSt.length) {
+    changes[cid].pg = 100;
+    changes[cid].s = '已完成';
+    pgMsg = ' ｜ 主任务 100% 已完成 ✅';
+  } else {
+    changes[cid].pg = aggPg;
+    if (curMainS === '已完成') {
+      changes[cid].s = (doneCount > 0) ? '进行中' : '待办';
+      pgMsg = ' ｜ 主任务重新打开 (' + aggPg + '%)';
+    } else if (doneCount > 0 && curMainS === '待办') {
+      changes[cid].s = '进行中';
+      pgMsg = ' ｜ 主任务 ' + aggPg + '%';
+    } else {
+      pgMsg = ' ｜ 主任务 ' + aggPg + '%';
+    }
+  }
+
   saveLocalChanges(changes);
   updateSyncUI();
   doRender();
-  showToast(curSt[stIdx].t + " → " + states[nextIdx]);
+  showToast(curSt[stIdx].t + " → " + states[nextIdx] + pgMsg);
 }
 
 // Override updateSyncUI to account for new tasks

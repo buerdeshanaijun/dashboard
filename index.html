@@ -48,6 +48,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 .fbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
 .fb{padding:5px 12px;border-radius:14px;font-size:11px;font-weight:600;background:#1a1d28;border:1px solid #2a2e3f;color:#9ca3b8;cursor:pointer;-webkit-tap-highlight-color:rgba(108,140,255,.2)}
 .fb.on{background:rgba(108,140,255,.2);border-color:#6c8cff;color:#6c8cff}
+.lfbar{display:flex;gap:5px;flex-wrap:wrap;margin:-6px 0 12px;align-items:center}
+.lfbar .lflabel{font-size:10px;font-weight:700;color:#5a6078;letter-spacing:.08em;margin-right:2px;opacity:.8}
+.lfbar .fb{padding:4px 10px;font-size:10.5px;border-radius:12px;background:rgba(255,159,67,.07);border-color:rgba(255,159,67,.2);color:#a08055}
+.lfbar .fb.on{background:rgba(255,159,67,.22);border-color:#ff9f43;color:#ff9f43}
+.lfbar .fb .lc{opacity:.55;margin-right:4px;font-weight:500}
 .kb{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .kc{background:rgba(26,29,40,.7);border-radius:10px;padding:10px;min-height:120px}
 .kc h3{font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid #2a2e3f}
@@ -188,6 +193,9 @@ body[data-theme="light"] .tab{color:#5a6078}
 body[data-theme="light"] .tab.on{color:#4a6cdf;border-bottom-color:#4a6cdf}
 body[data-theme="light"] .fbar .fb{background:#ffffff;border-color:#d8dce6;color:#5a6078}
 body[data-theme="light"] .fbar .fb.on{background:rgba(74,108,223,.15);border-color:#4a6cdf;color:#4a6cdf}
+body[data-theme="light"] .lfbar .lflabel{color:#8a90a8}
+body[data-theme="light"] .lfbar .fb{background:rgba(196,120,32,.07);border-color:rgba(196,120,32,.22);color:#8a6a40}
+body[data-theme="light"] .lfbar .fb.on{background:rgba(196,120,32,.18);border-color:#c47820;color:#c47820}
 body[data-theme="light"] .search-wrap{background:#ffffff;border-color:#d8dce6}
 body[data-theme="light"] .search-wrap input{color:#1a1d28}
 body[data-theme="light"] .refresh-btn{background:rgba(46,213,115,.1);color:#1d8c4a;border-color:rgba(46,213,115,.4)}
@@ -364,6 +372,7 @@ body.batch-mode .tt{padding-right:30px}
 
 <div class="vw" id="v-kanban" style="display:none">
   <div class="fbar" id="fk"></div>
+  <div class="lfbar" id="lfk"></div>
   <div class="batch-bar" id="batchBar">
     <span class="batch-count" id="batchCount">已选 0 项</span>
     <button class="batch-btn done" onclick="batchMarkDone()">标记完成</button>
@@ -379,6 +388,7 @@ body.batch-mode .tt{padding-right:30px}
 
 <div class="vw" id="v-all" style="display:none">
   <div class="fbar" id="fa"></div>
+  <div class="lfbar" id="lfa"></div>
   <div id="allbox"></div>
 </div>
 
@@ -392,6 +402,7 @@ body.batch-mode .tt{padding-right:30px}
 
 <div class="vw" id="v-done" style="display:none">
   <div class="fbar" id="fd"></div>
+  <div class="lfbar" id="lfd"></div>
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div style="font-size:12px;color:#9ca3b8" id="doneStats"></div>
     <div style="display:flex;gap:6px">
@@ -415,6 +426,7 @@ body.batch-mode .tt{padding-right:30px}
   <div class="fl"><div class="form-row">
     <div><label>分组</label><select id="at-g"><option value="">无</option></select></div>
     <div><label>类别</label><select id="at-c"><option value="">选择类别</option></select></div>
+    <div><label>主线</label><select id="at-line"><option value="">无</option></select></div>
   </div></div>
   <div class="form-actions">
     <button class="btn-primary" onclick="submitAddTask()">&#10133; 创建</button>
@@ -487,6 +499,7 @@ function copyText(text){
 // ===== GLOBALS =====
 var TASKS = [];
 var filterCat = "全部";
+var lineFilter = ""; // 主线筛选（与 c/p 筛选为 AND 关系）
 var searchQuery = "";
 var whoFilter = ""; // empty = all
 var TODAY = "";
@@ -527,7 +540,7 @@ function getMergedTasks() {
   // 2. Merge status changes and filter deleted
   var merged = [];
   for (var i = 0; i < base.length; i++) {
-    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st, g:base[i].g, updates:base[i].updates};
+    var task = {id:base[i].id, t:base[i].t, c:base[i].c, p:base[i].p, s:base[i].s, d:base[i].d, ds:base[i].ds, pg:base[i].pg, st:base[i].st, g:base[i].g, line:base[i].line, updates:base[i].updates};
     var cid = String(task.id);
     // Skip deleted
     if (changes[cid] && changes[cid]._deleted) continue;
@@ -804,6 +817,7 @@ function requestNotify() {
 
 function updateNotifBadge(enabled) {
   var btn = document.getElementById("notifBtn");
+  if (!btn) return; // 通知按钮已下线，元素不存在时静默跳过（此前会抛 TypeError 中断加载回调）
   if (enabled) btn.classList.add("enabled");
   else btn.classList.remove("enabled");
 }
@@ -917,8 +931,17 @@ function fetchWithRetry(callback, forceFresh) {
   xhr.timeout = 8000;
   xhr.onload = function() {
     if (xhr.status === 200) {
+      var parsed;
       try {
-        TASKS = JSON.parse(xhr.responseText);
+        parsed = JSON.parse(xhr.responseText);
+      } catch(e) {
+        document.getElementById("syncStatus").textContent = "数据解析失败";
+        document.getElementById("syncStatus").className = "sync-badge err";
+        hideLoading();
+        return;
+      }
+      try {
+        TASKS = parsed;
         DATA_VERSION = new Date().toLocaleString("zh-CN");
         lastFetchTime = Date.now();
       var loadTimeEl = document.getElementById("loadTime");
@@ -929,7 +952,8 @@ function fetchWithRetry(callback, forceFresh) {
         hideLoading();
         if (callback) callback();
       } catch(e) {
-        document.getElementById("syncStatus").textContent = "数据解析失败";
+        // 渲染阶段异常不再伪装成「数据解析失败」，直接暴露真实原因
+        document.getElementById("syncStatus").textContent = "渲染出错: " + (e && e.message ? e.message : e);
         document.getElementById("syncStatus").className = "sync-badge err";
         hideLoading();
       }
@@ -1119,6 +1143,8 @@ function makeCard(x) {
     '<div class="mg">' +
       '<span class="bg ' + pc + '">' + x.p + '</span>' +
       (x.g ? '<span class="bg" style="background:rgba(165,94,234,.15);color:#a55eea">' + x.g + '</span>' : '') +
+      (x.line ? '<span class="bg" style="background:rgba(255,159,67,.16);color:#ff9f43" title="主线：' + x.line + '">'
+        + (x.line.indexOf(' › ') > 0 ? x.line.split(' › ')[1] : x.line) + '</span>' : '') +
       '<span class="bg ' + cc + '">' + x.c + '</span>' +
       '<span class="bg bd">' + x.d + '</span>' +
       extraPg +
@@ -1127,6 +1153,21 @@ function makeCard(x) {
     stHtml +
     tsHtml +
   '</div>';
+}
+
+// 获取主线列表（只含有 line 的任务 = 只含有未完成任务），按数量降序
+function getLines() {
+  var data = getMergedTasks();
+  var cnt = {};
+  var order = [];
+  for (var i = 0; i < data.length; i++) {
+    var L = data[i].line;
+    if (!L) continue;
+    if (!(L in cnt)) { cnt[L] = 0; order.push(L); }
+    cnt[L]++;
+  }
+  order.sort(function(a, b) { return cnt[b] - cnt[a]; });
+  return order;
 }
 
 // Get filtered tasks (from merged data)
@@ -1151,6 +1192,14 @@ function getFiltered() {
     }
     data = result;
   }
+  // 主线筛选（line 维度，与 c/p 筛选 AND）
+  if (lineFilter) {
+    var lres = [];
+    for (var li = 0; li < data.length; li++) {
+      if (data[li].line === lineFilter) lres.push(data[li]);
+    }
+    data = lres;
+  }
   // Search filter
   if (searchQuery !== "") {
     var q = searchQuery.toLowerCase();
@@ -1159,7 +1208,8 @@ function getFiltered() {
       var t = data[i];
       if ((t.t && t.t.toLowerCase().indexOf(q) !== -1) ||
           (t.ds && t.ds.toLowerCase().indexOf(q) !== -1) ||
-          (t.c && t.c.toLowerCase().indexOf(q) !== -1)) {
+          (t.c && t.c.toLowerCase().indexOf(q) !== -1) ||
+          (t.line && t.line.toLowerCase().indexOf(q) !== -1)) {
         result.push(t);
       }
     }
@@ -1832,6 +1882,28 @@ function renderFilters() {
     // 9/16: 任务 tags 字段已整体移除；who 过滤机制保留（UI 不展示）
     _fbar.innerHTML = html;
   }
+  // 主线筛选行（line 维度）
+  var lines = getLines();
+  var lhtml = "";
+  if (lines.length > 0) {
+    lhtml = '<span class="lflabel">主线</span>';
+    for (var li2 = 0; li2 < lines.length; li2++) {
+      var L = lines[li2];
+      var lOn = (lineFilter === L) ? " on" : "";
+      var lShort = L.indexOf(' › ') > 0 ? L.split(' › ')[1] : L;
+      var lOwner = L.indexOf(' › ') > 0 ? L.split(' › ')[0] : "";
+      lhtml += '<span class="fb' + lOn + '" onclick="setLineFilter(\'' + L + '\')" title="' + L + '">'
+             + (lOwner ? '<span class="lc">' + lOwner + '</span>' : '') + lShort + '</span>';
+    }
+    if (lineFilter) {
+      lhtml += '<span class="fb" onclick="setLineFilter(\'\')" title="清除主线筛选">✕ 清除</span>';
+    }
+  }
+  var lbars = ["lfk","lfa","lfd"];
+  for (var lb = 0; lb < lbars.length; lb++) {
+    var _lbar = document.getElementById(lbars[lb]);
+    if (_lbar) _lbar.innerHTML = lhtml;
+  }
 }
 
 
@@ -2064,6 +2136,12 @@ function switchTabByName(name) {
 // Filter
 function setFilter(cat) {
   filterCat = cat;
+  doRender();
+}
+
+// 主线筛选（再点一次取消）
+function setLineFilter(line) {
+  lineFilter = (lineFilter === line) ? "" : line;
   doRender();
 }
 
@@ -2510,6 +2588,15 @@ function showAddTaskMo() {
   for (var g in groups) {
     grpSel.innerHTML += '<option value="' + g + '">' + g + '</option>';
   }
+  // 主线下拉：复用已有的 line 取值
+  var lineSel = document.getElementById("at-line");
+  if (lineSel) {
+    lineSel.innerHTML = '<option value="">无</option>';
+    var lines = getLines();
+    for (var li = 0; li < lines.length; li++) {
+      lineSel.innerHTML += '<option value="' + lines[li] + '">' + lines[li] + '</option>';
+    }
+  }
   document.getElementById("at-d").value = TODAY;
   document.getElementById("at-title").value = "";
   document.getElementById("at-ds").value = "";
@@ -2542,6 +2629,7 @@ function submitAddTask() {
     ds: document.getElementById("at-ds").value.trim() || "",
     pg: 0,
     g: document.getElementById("at-g").value || "",
+    line: document.getElementById("at-line") ? (document.getElementById("at-line").value || "") : "",
     st: [],
     updates: []
   };

@@ -915,8 +915,11 @@ function fetchData(callback, forceFresh) {
 }
 
 // 缓存策略（2026-09-15 优化）：
-// - 首次加载：data.json?d=<当天日期> → 命中 GitHub Pages 的 10 分钟缓存 + ETag 304，省流量
+// - 首次加载：data.json?d=<日期>_<10分钟时间桶> → 命中 GitHub Pages 的 10 分钟缓存 + ETag 304，省流量
 // - 手动刷新：forceFresh=true → data.json?v=<时间戳> 强制拉最新（绕过缓存）
+// 2026-11-23 修正：原按「当天日期」固定 URL，浏览器会把当天早先的旧版本整日缓存住，
+//   部署后用户首次打开仍看到旧数据（实测线上 164 条却显示 157 条）。
+//   改为 10 分钟滚动桶：同一桶内重复访问仍命中缓存，跨桶自动失效，脏数据最长滞留 10 分钟。
 function fetchWithRetry(callback, forceFresh) {
   var url;
   if (forceFresh) {
@@ -924,7 +927,8 @@ function fetchWithRetry(callback, forceFresh) {
   } else {
     var now = new Date();
     var dayTag = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
-    url = "data.json?d=" + dayTag;
+    var bucket = Math.floor(Date.now() / 600000); // 10 分钟滚动桶
+    url = "data.json?d=" + dayTag + "_" + bucket;
   }
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
